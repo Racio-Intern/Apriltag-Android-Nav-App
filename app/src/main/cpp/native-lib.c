@@ -262,5 +262,6 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1detect_1yuv(
     // Cleanup
     apriltag_detections_destroy(detections);
 
+    printf("function ended");
     return al;
 }
