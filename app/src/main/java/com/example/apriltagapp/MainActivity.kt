@@ -4,30 +4,23 @@ package com.example.apriltagapp
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Camera
 import android.graphics.ImageFormat
 import android.hardware.camera2.*
+import android.media.Image
 import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import android.util.Size
-import android.view.Surface
 import android.view.SurfaceHolder
-import android.view.SurfaceView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.lifecycle.lifecycleScope
 import com.example.apriltagapp.ApriltagNative.*
 import com.example.apriltagapp.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
+import java.nio.ByteBuffer
 import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 
 class MainActivity : AppCompatActivity() {
@@ -77,16 +70,18 @@ class MainActivity : AppCompatActivity() {
 
         private fun previewSession() {
             val surface = binding.viewSurface.holder.surface
-            imageReader = ImageReader.newInstance(1920, 1080, ImageFormat.JPEG, IMAGE_BUFFER_SIZE)
+            imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, IMAGE_BUFFER_SIZE)
             imageReader.setOnImageAvailableListener({ reader->
                 val image = reader.acquireNextImage()
                 val buffer = image.planes[0].buffer
                 val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                val results = apriltag_detect_yuv(bytes, 5664, 4248)
+                buffer.clear()
+
+
+                val results = apriltag_detect_yuv(bytes, 1280,720)
                 for(result in results) {
-                    println("태그 중심 : $result.c")
+                    println("태그 ID : ${result.id}")
                 }
-                println("함수 끝나고 출력")
                 image.close()
 
             }, backgroundHandler)
@@ -135,7 +130,6 @@ class MainActivity : AppCompatActivity() {
                     result: TotalCaptureResult
                 ) {
                     super.onCaptureCompleted(session, request, result)
-                    println("capture success")
                 }
             }, null)
         }
@@ -185,10 +179,9 @@ class MainActivity : AppCompatActivity() {
 
         override fun onCreate(savedInstanceState: Bundle?) {
             binding = ActivityMainBinding.inflate(layoutInflater)
-            binding.viewSurface.holder.setFixedSize(1920, 1080)
+            binding.viewSurface.holder.setFixedSize(1280,720)
             super.onCreate(savedInstanceState)
 
-            binding.viewSurface.holder.setFixedSize(1920, 1080)
             setContentView(binding.root)
 
             binding.sampleText.text = stringFromJNI()
@@ -198,6 +191,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             native_init()
+            apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
 
 
             if( ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
@@ -224,12 +218,12 @@ class MainActivity : AppCompatActivity() {
 
             })
 
-//            CoroutineScope(Dispatchers.Main).launch {
-//                while(true) {
-//                    delay(3000)
-//                    captureStillImage()
-//                }
-//            }
+            CoroutineScope(Dispatchers.Main).launch {
+                while(true) {
+                    delay(100)
+                    captureStillImage()
+                }
+            }
         }
 
         override fun onPause() {
@@ -244,4 +238,4 @@ class MainActivity : AppCompatActivity() {
             startBackgroundThread()
 
         }
-    }
+}

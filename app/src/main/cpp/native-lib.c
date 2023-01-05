@@ -9,7 +9,8 @@
 #include "tag36artoolkit.h"
 #include "tag25h9.h"
 // #include "tag25h7.h"
-#include "tag16h5.h"
+#include "apriltag/tag16h5.h"
+#include "tagStandard41h12.h"
 
 static struct {
     apriltag_detector_t *td;
@@ -188,6 +189,9 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1init(
     }*/ else if (!strcmp(tfname, "tag16h5")) {
         state.tf = tag16h5_create();
         state.tf_destroy = tag16h5_destroy;
+    } else if (!strcmp(tfname, "tagStandard41h12")) {
+        state.tf = tagStandard41h12_create();
+        state.tf_destroy = tagStandard41h12_destroy;
     } else {
         __android_log_print(ANDROID_LOG_ERROR, "apriltag_jni",
                             "invalid tag family: %s", tfname);
@@ -232,6 +236,7 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1detect_1yuv(
             .width = width,
             .stride = width
     };
+
     zarray_t *detections = apriltag_detector_detect(state.td, &im);
     (*env)->ReleaseByteArrayElements(env, _buf, buf, 0);
 
@@ -262,6 +267,5 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1detect_1yuv(
     // Cleanup
     apriltag_detections_destroy(detections);
 
-    printf("function ended");
     return al;
 }
