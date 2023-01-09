@@ -1,28 +1,36 @@
 package com.example.apriltagapp
 
-
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
-import android.os.Bundle
+import android.opengl.GLES11Ext
+import android.opengl.GLES20
+import android.opengl.GLSurfaceView
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import android.view.SurfaceHolder
-import androidx.appcompat.app.AppCompatActivity
+import android.view.Surface
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.apriltagapp.ApriltagNative.*
-import com.example.apriltagapp.databinding.ActivityMainBinding
-import kotlinx.coroutines.*
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 
-class MainActivity : AppCompatActivity() {
-    external fun stringFromJNI(): String
 
+class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+    private lateinit var triangle: Triangle
     companion object {
+        fun loadShader(type: Int, shaderCode: String): Int{
+            val shader = GLES20.glCreateShader(type)
+            GLES20.glShaderSource(shader, shaderCode)
+            GLES20.glCompileShader(shader)
+
+            return shader
+        }
+
         const val MY_PERMISSIONS_REQUEST_CAMERA = 77
         const val CAMERA_BACK = "0"
         const val CAMERA_FRONT = "1"
@@ -30,12 +38,8 @@ class MainActivity : AppCompatActivity() {
 
         init {
             System.loadLibrary("apriltag")
-
         }
     }
-
-    private lateinit var binding: ActivityMainBinding
-    var cameraId = CAMERA_BACK
 
     private lateinit var cameraDevice: CameraDevice
     private lateinit var backgroundThread: HandlerThread
@@ -43,9 +47,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var captureSession: CameraCaptureSession
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
     private lateinit var imageReader: ImageReader
+    private lateinit var texture: SurfaceTexture
+    private lateinit var hTex: IntArray
 
     private val cameraManager by lazy {
-        getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        view.context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     }
 
     private val deviceStateCallback = object : CameraDevice.StateCallback() {
@@ -67,8 +73,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun previewSession() {
-        val surface = binding.viewSurface.holder.surface
-        imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, IMAGE_BUFFER_SIZE)
+        texture.setDefaultBufferSize(1280, 720)
+        val surface = Surface(texture)
+        imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888,
+            MainActivity.IMAGE_BUFFER_SIZE
+        )
         imageReader.setOnImageAvailableListener({ reader ->
             val image = reader.acquireNextImage()
             val buffer = image.planes[0].buffer
@@ -76,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             buffer.clear()
 
 
-            val results = apriltag_detect_yuv(bytes, 1280, 720)
+            val results = ApriltagNative.apriltag_detect_yuv(bytes, 1280, 720)
             for (result in results) {
                 println("태그 ID : ${result.id}")
             }
@@ -125,23 +134,23 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-//    private fun captureStillImage() {
-//        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-//        captureRequestBuilder.addTarget(imageReader.surface)
-//        captureSession.capture(
-//            captureRequestBuilder.build(),
-//            object : CameraCaptureSession.CaptureCallback() {
-//                override fun onCaptureCompleted(
-//                    session: CameraCaptureSession,
-//                    request: CaptureRequest,
-//                    result: TotalCaptureResult
-//                ) {
-//                    super.onCaptureCompleted(session, request, result)
-//                }
-//            },
-//            null
-//        )
-//    }
+    private fun captureStillImage() {
+        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+        captureRequestBuilder.addTarget(imageReader.surface)
+        captureSession.capture(
+            captureRequestBuilder.build(),
+            object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: TotalCaptureResult
+                ) {
+                    super.onCaptureCompleted(session, request, result)
+                }
+            },
+            null
+        )
+    }
 
     private fun <T> cameraCharactersitics(cameraId: String, key: CameraCharacteristics.Key<T>): T {
         val characteristics = cameraManager.getCameraCharacteristics(cameraId)
@@ -172,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         val deviceId = cameraId(CameraCharacteristics.LENS_FACING_BACK)
         try {
             if (ActivityCompat.checkSelfPermission(
-                    this,
+                    view.context,
                     Manifest.permission.CAMERA
                 ) != PackageManager.PERMISSION_GRANTED
             ) return
@@ -186,91 +195,82 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
-                this,
+                view.context,
                 Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA),
-                MY_PERMISSIONS_REQUEST_CAMERA
-            )
+            println("카메라 권한 필요")
+//            ActivityCompat.requestPermissions(
+//                view.context,
+//                arrayOf(Manifest.permission.CAMERA),
+//                MainActivity.MY_PERMISSIONS_REQUEST_CAMERA
+//            )
         } else {
             connectCamera()
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        val view = CameraView(this)
-        super.onCreate(savedInstanceState)
+    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        startBackgroundThread()
+        initTex()
+        //GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f)
+        triangle = Triangle()
+        texture = SurfaceTexture(hTex[0])
+        texture.setOnFrameAvailableListener(this)
 
-        setContentView(view)
-//
-//        // Renderer 생성
-//        val renderer = MyRenderer()
-//        binding.viewSurface.setEGLContextClientVersion(2)
-//        binding.viewSurface.setRenderer(renderer)
-//
-//        binding.sampleText.text = stringFromJNI()
-//
-//        binding.btnSetting.setOnClickListener {
-//            captureStillImage()
-//        }
+        checkCameraPermission()
 
-        native_init()
-        apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
-//
-//
-//        if (ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.CAMERA
-//            ) != PackageManager.PERMISSION_GRANTED
-//        ) {
-//            ActivityCompat.requestPermissions(
-//                this,
-//                arrayOf(Manifest.permission.CAMERA),
-//                MY_PERMISSIONS_REQUEST_CAMERA
-//            )
-//        } else {
-//            println("카메라 권한 획득")
-//        }
-
-//        binding.viewSurface.holder.addCallback(object : SurfaceHolder.Callback {
-//            override fun surfaceCreated(holder: SurfaceHolder) {
-//                checkCameraPermission()
-//            }
-//
-//            override fun surfaceChanged(
-//                holder: SurfaceHolder,
-//                format: Int,
-//                width: Int,
-//                height: Int
-//            ) {
-//            }
-//
-//            override fun surfaceDestroyed(holder: SurfaceHolder) {
-//            }
-//
-//        })
-//
-//        CoroutineScope(Dispatchers.Main).launch {
-//            while (true) {
-//                delay(100)
-//                captureStillImage()
-//            }
-//        }
     }
 
-//    override fun onPause() {
-//        stopBackgroundThread()
-//        closeCamera()
-//        super.onPause()
-//    }
-//
-//    override fun onResume() {
-//        super.onResume()
-//
-//        startBackgroundThread()
-//
-//    }
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        GLES20.glViewport(0, 0, width, height)
+    }
+
+    override fun onDrawFrame(gl: GL10?) {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        //triangle.draw()
+    }
+
+    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
+        view.requestRender()
+        captureStillImage()
+    }
+
+    private fun initTex() {
+        hTex = IntArray(1)
+        GLES20.glGenTextures(1, hTex, 0)
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0])
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_S,
+            GLES20.GL_CLAMP_TO_EDGE
+        )
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_T,
+            GLES20.GL_CLAMP_TO_EDGE
+        )
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MIN_FILTER,
+            GLES20.GL_NEAREST
+        )
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MAG_FILTER,
+            GLES20.GL_NEAREST
+        )
+    }
+
+    fun onResume() {
+        startBackgroundThread()
+    }
+
+    fun onPause() {
+        closeCamera()
+        stopBackgroundThread()
+    }
+
+
+
 }
