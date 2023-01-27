@@ -1,241 +1,65 @@
 package com.example.apriltagapp
 
-
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
-import android.media.Image
 import android.media.ImageReader
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.AttributeSet
 import android.util.Log
+import android.view.Surface
 import android.view.SurfaceHolder
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.apriltagapp.ApriltagNative.*
 import com.example.apriltagapp.databinding.ActivityMainBinding
-import kotlinx.coroutines.*
-import java.nio.ByteBuffer
-import java.util.*
 
-
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(){
     external fun stringFromJNI(): String
+    lateinit var binding: ActivityMainBinding
+    lateinit var glSurfaceView: GLSurfaceView
+    lateinit var renderer: MyRenderer
+    lateinit var previewSurface: Surface
+
     companion object {
-        const val MY_PERMISSIONS_REQUEST_CAMERA = 77
-        const val CAMERA_BACK = "0"
-        const val CAMERA_FRONT = "1"
         const val IMAGE_BUFFER_SIZE = 1
 
         init {
             System.loadLibrary("apriltag")
-
         }
     }
-        private lateinit var binding: ActivityMainBinding
-        var cameraId = CAMERA_BACK
 
-        private lateinit var cameraDevice: CameraDevice
-        private lateinit var backgroundThread: HandlerThread
-        private lateinit var backgroundHandler: Handler
-        private lateinit var captureSession: CameraCaptureSession
-        private lateinit var captureRequestBuilder: CaptureRequest.Builder
-        private lateinit var imageReader: ImageReader
-
-        private val cameraManager by lazy {
-            getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        }
-
-        private val deviceStateCallback = object: CameraDevice.StateCallback() {
-            override fun onOpened(camera: CameraDevice) {
-                cameraDevice = camera
-                println("카메라 시작")
-                previewSession()
-            }
-
-            override fun onDisconnected(camera: CameraDevice) {
-                camera.close()
-                println("카메라 종료")
-            }
-
-            override fun onError(camera: CameraDevice, error: Int) {
-                println("카메라 오류")
-            }
-
-        }
-
-        private fun previewSession() {
-            val surface = binding.viewSurface.holder.surface
-            imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, IMAGE_BUFFER_SIZE)
-            imageReader.setOnImageAvailableListener({ reader->
-                val image = reader.acquireNextImage()
-                val buffer = image.planes[0].buffer
-                val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                buffer.clear()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        binding = ActivityMainBinding.inflate(layoutInflater)
 
 
-                val results = apriltag_detect_yuv(bytes, 1280,720)
-                for(result in results) {
-                    println("태그 ID : ${result.id}")
-                }
-                image.close()
+        super.onCreate(savedInstanceState)
+        glSurfaceView = GLSurfaceView(this)
+        val surface = glSurfaceView.holder.surface
+        renderer = MyRenderer(glSurfaceView)
 
-            }, backgroundHandler)
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-            captureRequestBuilder.addTarget(surface)
-            cameraDevice.createCaptureSession(listOf(surface, imageReader.surface), object: CameraCaptureSession.StateCallback() {
-                override fun onConfigureFailed(session: CameraCaptureSession) {
-                    println("session 생성 실패")
-                }
+        setContentView(glSurfaceView)
 
-                override fun onConfigured(session: CameraCaptureSession) {
-                    captureSession = session
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null)
-                }
-            }, null)
-        }
+        val param = glSurfaceView.layoutParams
+        param.height = 500
+        param.width = 500
+        glSurfaceView.layoutParams = param
 
-        private fun closeCamera() {
-            captureSession.close()
-            cameraDevice.close()
-        }
+        native_init()
+        apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
+    }
 
-        private fun startBackgroundThread() {
-            backgroundThread = HandlerThread("Camera2").apply { start() }
-            backgroundHandler = Handler(backgroundThread.looper)
-        }
-
-        private fun stopBackgroundThread() {
-            backgroundThread.quitSafely()
-            try {
-                backgroundThread.join()
-            }catch (e: Exception){
-                println("background 오류")
-            }
-
-        }
-
-        private fun captureStillImage() {
-            cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-            captureRequestBuilder.addTarget(imageReader.surface)
-            captureSession.capture(captureRequestBuilder.build(), object: CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureCompleted(
-                    session: CameraCaptureSession,
-                    request: CaptureRequest,
-                    result: TotalCaptureResult
-                ) {
-                    super.onCaptureCompleted(session, request, result)
-                }
-            }, null)
-        }
-
-        private fun <T> cameraCharactersitics(cameraId: String, key: CameraCharacteristics.Key<T>) : T {
-            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-            return when(key) {
-                CameraCharacteristics.LENS_FACING -> characteristics.get(key)!!
-                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP -> characteristics.get(key)!!
-                else -> throw IllegalArgumentException("Key not recognized")
-            }
-        }
-
-        private fun cameraId(lens: Int): String {
-            var deviceId = listOf<String>()
-            try {
-                val cameraIdList = cameraManager.cameraIdList
-                deviceId = cameraIdList.filter { lens == cameraCharactersitics(it, CameraCharacteristics.LENS_FACING)}
-            }catch(e: CameraAccessException) {
-                println("Camera Access Excection : $e")
-            }
-            return deviceId[0]
-        }
-
-        private fun connectCamera() {
-            val deviceId = cameraId(CameraCharacteristics.LENS_FACING_BACK)
-            try {
-                if (ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.CAMERA
-                    ) != PackageManager.PERMISSION_GRANTED
-                )  return
-                cameraManager.openCamera(deviceId, deviceStateCallback, backgroundHandler)
-            }catch(e: CameraAccessException) {
-                Log.d("MYLOG", "카메라 접근 권한이 없습니다.")
-            }catch(e: InterruptedException) {
-                Log.e("MYLOG", "interrupt 오류")
-            }
-        }
-        private fun checkCameraPermission() {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), MY_PERMISSIONS_REQUEST_CAMERA)
-            } else {
-                connectCamera()
-            }
-        }
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            binding = ActivityMainBinding.inflate(layoutInflater)
-            binding.viewSurface.holder.setFixedSize(1280,720)
-            super.onCreate(savedInstanceState)
-
-            setContentView(binding.root)
-
-            binding.sampleText.text = stringFromJNI()
-
-            binding.btnSetting.setOnClickListener {
-                captureStillImage()
-            }
-
-            native_init()
-            apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
-
-
-            if( ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), MY_PERMISSIONS_REQUEST_CAMERA)
-            }else {
-                println("카메라 권한 획득")
-            }
-
-            binding.viewSurface.holder.addCallback(object: SurfaceHolder.Callback {
-                override fun surfaceCreated(holder: SurfaceHolder) {
-                    checkCameraPermission()
-                }
-
-                override fun surfaceChanged(
-                    holder: SurfaceHolder,
-                    format: Int,
-                    width: Int,
-                    height: Int
-                ) {
-                }
-
-                override fun surfaceDestroyed(holder: SurfaceHolder) {
-                }
-
-            })
-
-            CoroutineScope(Dispatchers.Main).launch {
-                while(true) {
-                    delay(100)
-                    captureStillImage()
-                }
-            }
-        }
-
-        override fun onPause() {
-            stopBackgroundThread()
-            closeCamera()
-            super.onPause()
-        }
-
-        override fun onResume() {
-            super.onResume()
-
-            startBackgroundThread()
-
-        }
 }
+
+
+
