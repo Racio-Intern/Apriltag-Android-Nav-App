@@ -1,33 +1,32 @@
 package com.example.apriltagapp
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
+import android.hardware.camera2.*
+import android.media.ImageReader
 import android.opengl.GLSurfaceView
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
+import android.view.Surface
 import android.view.SurfaceHolder
-import android.view.View
-import java.util.ArrayList
+import android.view.SurfaceView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
-class CameraView(private val con: Context): GLSurfaceView(con), SurfaceTexture.OnFrameAvailableListener {
-    val renderer: MyRenderer
-    init {
-        renderer = MyRenderer(this)
-        setEGLContextClientVersion(2)
-        setRenderer(renderer)
+class CameraView(val mContext: Context) : GLSurfaceView(mContext), SurfaceHolder.Callback {
 
+    init  {
+        holder.addCallback(this)
     }
 
-    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        renderer.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        renderer.onPause()
+    companion object {
+        init {
+            System.loadLibrary("apriltag")
+        }
     }
 
 

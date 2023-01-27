@@ -24,7 +24,7 @@ class Triangle {
         -1.5f, 0.5f, 0.0f,
         0.5f, 0.5f, -1.0f
     ).toFloatArray()
-    private val color = arrayOf(0.0f, 1.0f, 1.0f, 0.3f).toFloatArray()
+    private val color = arrayOf(0.2f, 0.2f, 1.0f, 0.3f).toFloatArray()
     private var vertexBuffer: FloatBuffer
     private var mProgram: Int = -1
     private var positionHandle: Int = -1

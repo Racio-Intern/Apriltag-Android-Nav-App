@@ -7,6 +7,7 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
+import android.opengl.GLES11
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
@@ -14,16 +15,26 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.Surface
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
-class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
     private lateinit var triangle: Triangle
+    private lateinit var surface: Surface
+
+    init {
+        view.setEGLContextClientVersion(2)
+        view.setRenderer(this)
+        view.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+    }
+
     companion object {
-        fun loadShader(type: Int, shaderCode: String): Int{
+        fun loadShader(type: Int, shaderCode: String): Int {
             val shader = GLES20.glCreateShader(type)
             GLES20.glShaderSource(shader, shaderCode)
             GLES20.glCompileShader(shader)
@@ -36,10 +47,61 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
         const val CAMERA_FRONT = "1"
         const val IMAGE_BUFFER_SIZE = 1
 
-        init {
-            System.loadLibrary("apriltag")
-        }
+
     }
+
+
+    private lateinit var texture: SurfaceTexture
+
+        private lateinit var hTex: IntArray
+    private var updateState = false
+
+
+    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        initTex()
+        texture = SurfaceTexture(hTex[0])
+        texture.setOnFrameAvailableListener(this)
+
+        GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f)
+        GLES20.glFinish()
+        triangle = Triangle()
+        println("surface 생성됨")
+        startBackgroundThread()
+        checkCameraPermission()
+        updateState = true
+
+
+    }
+
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        GLES20.glViewport(0, 0, 1280, 1920)
+    }
+
+    override fun onDrawFrame(gl: GL10?) {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        if (updateState) {
+            texture.updateTexImage()
+            updateState = false
+        }
+        //triangle.draw()
+    }
+
+    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
+        updateState = true
+        view.requestRender()
+    }
+
+    private fun initTex() {
+        hTex = IntArray(1)
+        GLES20.glGenTextures(1, hTex, 0)
+        println("hTex : ${hTex[0]}")
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+    }
+
 
     private lateinit var cameraDevice: CameraDevice
     private lateinit var backgroundThread: HandlerThread
@@ -47,8 +109,6 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
     private lateinit var captureSession: CameraCaptureSession
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
     private lateinit var imageReader: ImageReader
-    private lateinit var texture: SurfaceTexture
-    private lateinit var hTex: IntArray
 
     private val cameraManager by lazy {
         view.context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -74,8 +134,10 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
 
     private fun previewSession() {
         texture.setDefaultBufferSize(1280, 720)
-        val surface = Surface(texture)
-        imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888,
+        surface = Surface(texture)
+
+        imageReader = ImageReader.newInstance(
+            1280, 720, ImageFormat.YUV_420_888,
             MainActivity.IMAGE_BUFFER_SIZE
         )
         imageReader.setOnImageAvailableListener({ reader ->
@@ -93,25 +155,38 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
 
         }, backgroundHandler)
         captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+        captureRequestBuilder.addTarget(imageReader.surface)
         captureRequestBuilder.addTarget(surface)
-        cameraDevice.createCaptureSession(
-            listOf(surface, imageReader.surface),
-            object : CameraCaptureSession.StateCallback() {
-                override fun onConfigureFailed(session: CameraCaptureSession) {
-                    println("session 생성 실패")
-                }
+        try {
+            cameraDevice.createCaptureSession(
+                listOf(surface, imageReader.surface),
+                object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                        println("session 생성 실패")
+                    }
 
-                override fun onConfigured(session: CameraCaptureSession) {
-                    captureSession = session
-                    captureRequestBuilder.set(
-                        CaptureRequest.CONTROL_AF_MODE,
-                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-                    )
-                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null)
-                }
-            },
-            null
-        )
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        captureSession = session
+                        captureRequestBuilder.set(
+                            CaptureRequest.CONTROL_AF_MODE,
+                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                        )
+                        val previewRequest = captureRequestBuilder.build()
+                        println("preview request : ${previewRequest}")
+                        captureSession.setRepeatingRequest(
+                            previewRequest,
+                            null,
+                            backgroundHandler
+                        )
+                    }
+                },
+                null
+            )
+        }catch(e: CameraAccessException) {
+            println("session 생성 실패 : $e")
+        }
+
+
     }
 
     private fun closeCamera() {
@@ -139,20 +214,12 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
         captureRequestBuilder.addTarget(imageReader.surface)
         captureSession.capture(
             captureRequestBuilder.build(),
-            object : CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureCompleted(
-                    session: CameraCaptureSession,
-                    request: CaptureRequest,
-                    result: TotalCaptureResult
-                ) {
-                    super.onCaptureCompleted(session, request, result)
-                }
-            },
+            object : CameraCaptureSession.CaptureCallback() {},
             null
         )
     }
 
-    private fun <T> cameraCharactersitics(cameraId: String, key: CameraCharacteristics.Key<T>): T {
+    private fun <T> cameraCharacteristics(cameraId: String, key: CameraCharacteristics.Key<T>): T {
         val characteristics = cameraManager.getCameraCharacteristics(cameraId)
         return when (key) {
             CameraCharacteristics.LENS_FACING -> characteristics.get(key)!!
@@ -166,7 +233,7 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
         try {
             val cameraIdList = cameraManager.cameraIdList
             deviceId = cameraIdList.filter {
-                lens == cameraCharactersitics(
+                lens == cameraCharacteristics(
                     it,
                     CameraCharacteristics.LENS_FACING
                 )
@@ -209,68 +276,4 @@ class MyRenderer(val view: CameraView): GLSurfaceView.Renderer, SurfaceTexture.O
             connectCamera()
         }
     }
-
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        startBackgroundThread()
-        initTex()
-        //GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f)
-        triangle = Triangle()
-        texture = SurfaceTexture(hTex[0])
-        texture.setOnFrameAvailableListener(this)
-
-        checkCameraPermission()
-
-    }
-
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        GLES20.glViewport(0, 0, width, height)
-    }
-
-    override fun onDrawFrame(gl: GL10?) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        //triangle.draw()
-    }
-
-    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-        view.requestRender()
-        captureStillImage()
-    }
-
-    private fun initTex() {
-        hTex = IntArray(1)
-        GLES20.glGenTextures(1, hTex, 0)
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0])
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_S,
-            GLES20.GL_CLAMP_TO_EDGE
-        )
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_T,
-            GLES20.GL_CLAMP_TO_EDGE
-        )
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MIN_FILTER,
-            GLES20.GL_NEAREST
-        )
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MAG_FILTER,
-            GLES20.GL_NEAREST
-        )
-    }
-
-    fun onResume() {
-        startBackgroundThread()
-    }
-
-    fun onPause() {
-        closeCamera()
-        stopBackgroundThread()
-    }
-
-
-
 }
