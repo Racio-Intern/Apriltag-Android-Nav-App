@@ -1,4 +1,4 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.view.camera
 
 import android.Manifest
 import android.content.Context
@@ -16,6 +16,9 @@ import android.util.Log
 import android.view.Surface
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.apriltagapp.ApriltagDetection
+import com.example.apriltagapp.ApriltagNative
+import com.example.apriltagapp.MainActivity
 import com.example.apriltagapp.model.baseShape.Triangle
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig

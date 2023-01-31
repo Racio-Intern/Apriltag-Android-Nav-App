@@ -4,6 +4,4 @@ abstract class Pos {
     /** 좌표계 차원 */
     abstract val dimension: Int
 
-
-
 }

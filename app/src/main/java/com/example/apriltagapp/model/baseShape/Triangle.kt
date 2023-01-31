@@ -1,7 +1,7 @@
 package com.example.apriltagapp.model.baseShape
 
 import android.opengl.GLES20
-import com.example.apriltagapp.MyRenderer
+import com.example.apriltagapp.view.camera.MyRenderer
 import com.example.apriltagapp.model.baseModel.Pos
 import com.example.apriltagapp.model.baseModel.Shape
 import java.nio.ByteBuffer

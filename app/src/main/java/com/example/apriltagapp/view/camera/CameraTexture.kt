@@ -1,4 +1,4 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.view.camera
 
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
