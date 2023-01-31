@@ -2,11 +2,9 @@ package com.example.apriltagapp
 
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
-import android.opengl.GLUtils
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.apriltagapp.databinding.ActivityGlBinding
-import java.nio.Buffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -25,7 +23,7 @@ class GlActivity : AppCompatActivity() {
 }
 
 class ExampleRenderer: GLSurfaceView.Renderer {
-    private lateinit var triangle: Triangle
+    private lateinit var triangle: CameraTexture
     companion object {
         fun loadShader(type: Int, shaderCode: String): Int{
             val shader = GLES20.glCreateShader(type)
@@ -38,7 +36,7 @@ class ExampleRenderer: GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        triangle = Triangle()
+        triangle = CameraTexture(0)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {

@@ -20,11 +20,11 @@ class Triangle {
 
     private val VERTAX = 3
     private var triangleCoords = arrayOf(
-        0.0f, 0.0f, 1.0f,
-        -1.5f, 0.5f, 0.0f,
-        0.5f, 0.5f, -1.0f
+        0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f
     ).toFloatArray()
-    private val color = arrayOf(0.2f, 0.2f, 1.0f, 0.3f).toFloatArray()
+    private val color = arrayOf(1.0f, 0.0f, 1.0f, 1.0f).toFloatArray()
     private var vertexBuffer: FloatBuffer
     private var mProgram: Int = -1
     private var positionHandle: Int = -1
@@ -48,7 +48,7 @@ class Triangle {
 
     }
 
-    fun draw() {
+    fun draw(point: FloatArray, nPoints: Int) {
         GLES20.glUseProgram(mProgram)
 
         positionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition")
@@ -56,14 +56,19 @@ class Triangle {
         GLES20.glEnableVertexAttribArray(positionHandle)
         GLES20.glVertexAttribPointer(positionHandle, VERTAX, GLES20.GL_FLOAT, false, 0, vertexBuffer)
 
+        // mProgram 객체로부터 fragment shader의 'vColor' 맴버에 대한 핸들을 가져옴
         colorHandle = GLES20.glGetUniformLocation(mProgram, "vColor")
 
+        // triangle 렌더링 시 사용할 색으로 color 변수에 정의한 값을 사용
         GLES20.glUniform4fv(colorHandle, 1, color, 0)
 
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, triangleCoords.size / VERTAX)
+        // count만큼 triangle을 렌더링한다.
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, triangleCoords.size / VERTAX)
 
+        // vertex 속성 비활성화
         GLES20.glDisableVertexAttribArray(positionHandle)
 
+        // color 속성 비활성화
         GLES20.glDisableVertexAttribArray(colorHandle)
     }
 }

@@ -44,16 +44,10 @@ class MainActivity : AppCompatActivity(){
 
 
         super.onCreate(savedInstanceState)
-        glSurfaceView = GLSurfaceView(this)
+        glSurfaceView = GLSurfaceView(binding.viewSurface.context)
         val surface = glSurfaceView.holder.surface
         renderer = MyRenderer(glSurfaceView)
-
         setContentView(glSurfaceView)
-
-        val param = glSurfaceView.layoutParams
-        param.height = 500
-        param.width = 500
-        glSurfaceView.layoutParams = param
 
         native_init()
         apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
