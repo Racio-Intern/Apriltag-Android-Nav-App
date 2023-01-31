@@ -1,4 +1,4 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.view.camera
 
 import android.Manifest
 import android.content.Context

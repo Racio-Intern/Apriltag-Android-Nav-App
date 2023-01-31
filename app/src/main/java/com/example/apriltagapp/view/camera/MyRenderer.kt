@@ -1,4 +1,4 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.view.camera
 
 import android.Manifest
 import android.content.Context
@@ -16,6 +16,10 @@ import android.util.Log
 import android.view.Surface
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.apriltagapp.ApriltagDetection
+import com.example.apriltagapp.ApriltagNative
+import com.example.apriltagapp.MainActivity
+import com.example.apriltagapp.model.baseShape.Triangle
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -73,7 +77,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        GLES20.glViewport(0, 0, 1280, 1920)
+        GLES20.glViewport(0, 0, width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -304,7 +308,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
         ) {
             println("카메라 권한 필요")
 //            ActivityCompat.requestPermissions(
-//                view.context,
+//                액티비티,
 //                arrayOf(Manifest.permission.CAMERA),
 //                MainActivity.MY_PERMISSIONS_REQUEST_CAMERA
 //            )
