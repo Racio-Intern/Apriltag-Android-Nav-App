@@ -1,11 +1,14 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.model.baseShape
 
 import android.opengl.GLES20
+import com.example.apriltagapp.MyRenderer
+import com.example.apriltagapp.model.baseModel.Pos
+import com.example.apriltagapp.model.baseModel.Shape
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class Triangle {
+class Triangle: Shape() {
 
     val VERTEX_SHADER_CODE = "attribute vec4 vPosition;" +
             "void main(){" +
@@ -70,5 +73,9 @@ class Triangle {
 
         // color 속성 비활성화
         GLES20.glDisableVertexAttribArray(colorHandle)
+    }
+
+    override fun draw(pos: Pos) {
+        draw(floatArrayOf(0.0f), 0)
     }
 }
