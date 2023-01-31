@@ -7,7 +7,6 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
-import android.opengl.GLES11
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
@@ -15,17 +14,18 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
 class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
     private lateinit var triangle: Triangle
+    private lateinit var cameraTexture: CameraTexture
     private lateinit var surface: Surface
+    private var mDetections: ArrayList<ApriltagDetection>? = null
 
     init {
         view.setEGLContextClientVersion(2)
@@ -64,13 +64,12 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
 
         GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f)
         GLES20.glFinish()
+        cameraTexture = CameraTexture(hTex[0])
         triangle = Triangle()
         println("surface 생성됨")
         startBackgroundThread()
         checkCameraPermission()
         updateState = true
-
-
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -83,7 +82,43 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
             texture.updateTexImage()
             updateState = false
         }
-        //triangle.draw()
+        cameraTexture.draw()
+
+        /*
+        var points = FloatArray(8)
+        mDetections?.let{
+            val temp = it[0]
+            for (i in 0..3) {
+                val x = 0.5 - (temp.p[2 * i + 1] / 720)
+                val y = 0.5 - (temp.p[2 * i + 1] / 1280)
+                points[2 * i + 0] = x.toFloat()
+                points[2 * i + 1] = y.toFloat()
+            }
+
+            // Determine corner points
+            val point_0 = Arrays.copyOfRange(points, 0, 2)
+            val point_1 = Arrays.copyOfRange(points, 2, 4)
+            val point_2 = Arrays.copyOfRange(points, 4, 6)
+            val point_3 = Arrays.copyOfRange(points, 6, 8)
+
+            // Determine bounding boxes
+
+            // Determine bounding boxes
+            val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
+            val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
+            val line_border = floatArrayOf(
+                point_1[0], point_1[1], point_2[0], point_2[1],
+                point_2[0], point_2[1], point_3[0], point_3[1]
+            )
+
+            line.draw(line_x, 2)
+            line.draw(line_y, 2)
+            line.draw(line_border, 4)
+
+            mDetections = null
+        }
+         */
+        triangle.draw(arrayOf(0.0f).toFloatArray(), 2)
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
@@ -133,6 +168,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
     }
 
     private fun previewSession() {
+
         texture.setDefaultBufferSize(1280, 720)
         surface = Surface(texture)
 
@@ -146,8 +182,8 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
             val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
             buffer.clear()
 
-
             val results = ApriltagNative.apriltag_detect_yuv(bytes, 1280, 720)
+
             for (result in results) {
                 println("태그 ID : ${result.id}")
             }
