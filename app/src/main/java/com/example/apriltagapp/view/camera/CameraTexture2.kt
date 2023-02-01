@@ -6,19 +6,17 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class CameraTexture(var hTex: Int) {
-
+class CameraTexture2(var hTex: Int) {
     val VERTEX_SHADER_CODE = "" +
-            "attribute vec2 vPosition;\n" +
+            "uniform mat4 uMVPMatrix;\n" +
+            "attribute vec4 vPosition;\n" +
             "attribute vec2 vTexCoord;\n" +
             "varying vec2 texCoord;\n" +
             "void main() {\n" +
             "  texCoord = vTexCoord;\n" +
-            "  gl_Position = vec4 ( vPosition.x, vPosition.y, 0.0, 1.0 );\n" +
+            "  gl_Position = uMVPMatrix * vPosition;\n" +
             "}"
 
-    // gl_FragColor에 대입되는 값이 컬러값이 아닌 텍스쳐이고, texture2D함수의 인자로
-    // texture와 uv 좌표값을 받고 있다.
     val FRAGMENT_SHADER_CODE = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
@@ -29,11 +27,17 @@ class CameraTexture(var hTex: Int) {
             "}"
 
     private var vtmp = arrayOf(
-        -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f
+        -0.5f, -0.5f,   // 0 bottom left
+        0.5f, -0.5f,   // 1 bottom right
+        -0.5f,  0.5f,   // 2 top left
+        0.5f,  0.5f   // 3 top right
     ).toFloatArray()
 
     private var ttmp = arrayOf(
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f
+        1.0f, 1.0f,     // 0 bottom left
+        1.0f, 0.0f,     // 1 bottom right
+        0.0f, 1.0f,     // 2 top left
+        0.0f, 0.0f     // 3 top right
     ).toFloatArray()
 
     private var mProgram: Int = -1
@@ -76,6 +80,8 @@ class CameraTexture(var hTex: Int) {
         // 렌더링 상태(Rendering State)의 일부분으로 mProgram을 추가한다.
         GLES20.glUseProgram(mProgram)
 
+        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, matrix, 0)
 
         // mProgram 객체로부터 vertex shader의 'vPosition', 'vTexCoord' 멤버에 대한 핸들을 가져옴
         var ph = GLES20.glGetAttribLocation(mProgram, "vPosition")

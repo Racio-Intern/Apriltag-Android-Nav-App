@@ -10,9 +10,9 @@ class Line2 {
 
     val VERTEX_SHADER_CODE =
             "uniform mat4 uMVPMatrix;\n" +
-            "attribute vec4 vPosition;\n" +
+            "attribute vec4 aPosition;\n" +
             "void main(){" +
-            "   gl_Position = uMVPMatrix * vPosition;" +
+            "   gl_Position = uMVPMatrix * aPosition;" +
             "}";
 
     val FRAGMENT_SHADER_CODE = "precision mediump float;" +
@@ -30,7 +30,7 @@ class Line2 {
 
 
     init {
-        var byteBuffer = ByteBuffer.allocateDirect(4 * 4 * 2)
+        var byteBuffer = ByteBuffer.allocateDirect(4 * 20 * 2)
         val vertexShader = MyRenderer.loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE)
         val fragmentShader  = MyRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE)
 
@@ -62,7 +62,7 @@ class Line2 {
 
         GLES20.glUseProgram(mProgram)
 
-        positionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition")
+        positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition")
 
         GLES20.glEnableVertexAttribArray(positionHandle)
         GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer)
@@ -75,7 +75,7 @@ class Line2 {
 
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, matrix, 0)
-        GLES20.glLineWidth(16.0f)
+        GLES20.glLineWidth(4.0f)
         // count만큼 triangle을 렌더링한다.
         GLES20.glDrawArrays(GLES20.GL_LINES, 0, nPoints)
 

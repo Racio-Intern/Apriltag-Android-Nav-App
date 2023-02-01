@@ -1,7 +1,6 @@
 package com.example.apriltagapp.view.camera
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -34,11 +33,12 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var triangle: Triangle
     private lateinit var cameraTexture: CameraTexture
+    private lateinit var cameraTexture2: CameraTexture2
     private lateinit var line: Line
     private lateinit var line2: Line2
     private lateinit var surface: Surface
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
-    private lateinit var size: Size
+    private val mPreviewSize: Size = Size(1280, 720)
 
     // Projection * View * Model matrix
     var M = FloatArray(16)
@@ -83,10 +83,11 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f)
         // GLES20.glFinish()
         cameraTexture = CameraTexture(hTex[0])
+        cameraTexture2 = CameraTexture2(hTex[0])
         triangle = Triangle()
         line = Line()
         line2 = Line2()
-        println("surface 생성됨")
+
         startBackgroundThread()
         checkCameraPermission()
         updateState = true
@@ -94,47 +95,53 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
-        size = Size(width, height)
 
         // matrix start~
+
         Matrix.setIdentityM(V, 0)
         Matrix.translateM(V, 0, width / 2.0f, height / 2.0f, 0.0f)
         Matrix.orthoM(P, 0, 0.0f, width.toFloat(), 0f, height.toFloat(), -1.0f, 1.0f)
 
-        val width_ratio = width / 720.0f
-        val height_ratio = height / 1280.0f
-        val scale_ratio = Math.max(width_ratio, height_ratio)
+        // Update surface dimensions and scale preview to fit the surface
+        // Scaling is done to maintain aspect ratio but maximally fill the surface
+        // Note: Camera preview size and surface size have width/height swapped
+        val preWidth = mPreviewSize.height.toFloat()
+        val preHeight = mPreviewSize.width.toFloat()
 
-        val draw_width = (1280.0f * scale_ratio)
-        val draw_height = (720.0f * scale_ratio)
+        val widthRatio = width / preWidth
+        val heightRatio = height / preHeight
+        val scale_ratio = Math.max(widthRatio, heightRatio)
+
+        val draw_width = (mPreviewSize.width * scale_ratio).toInt()
+        val draw_height = (mPreviewSize.height * scale_ratio).toInt()
 
         Matrix.setIdentityM(M, 0)
-        Matrix.scaleM(M, 0, draw_height, draw_width, 1.0f)
+        Matrix.scaleM(M, 0, draw_height.toFloat(), draw_width.toFloat(), 1.0f)
     }
 
     override fun onDrawFrame(gl: GL10?) {
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         if (updateState) {
             texture.updateTexImage()
             updateState = false
         }
-        cameraTexture.draw()
+
+        Matrix.multiplyMM(PVM, 0, V, 0, M, 0)
+        Matrix.multiplyMM(PVM, 0, P, 0, PVM, 0)
+
+        //cameraTexture.draw(PVM)
+        cameraTexture2.draw(PVM)
         val points = FloatArray(8)
-        if (!mDetections.isEmpty()) {
-            Matrix.multiplyMM(PVM, 0, V, 0, M, 0)
-            Matrix.multiplyMM(PVM, 0, P, 0, PVM, 0)
+        if(!mDetections.isEmpty()){
 
             val temp = mDetections[0]
             for (i in 0..3) {
-                val x = 0.5f - (temp.p[2 * i + 1] / 720.0f)
-                val y = 0.5f - (temp.p[2 * i + 0] / 1280.0f)
+                val x = 0.5f - (temp.p[2*i + 1] / mPreviewSize.height.toFloat())
+                val y = 0.5f - (temp.p[2*i + 0] / mPreviewSize.width.toFloat())
                 points[2 * i + 0] = x.toFloat()
                 points[2 * i + 1] = y.toFloat()
             }
-
-
-            //System.out.println("hello");
-            //System.out.println(mPreviewSize.height + " " + mPreviewSize.width);
 
             // Determine corner points
             val point_0 = Arrays.copyOfRange(points, 0, 2)
@@ -151,10 +158,11 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
                 point_1[0], point_1[1], point_2[0], point_2[1],
                 point_2[0], point_2[1], point_3[0], point_3[1]
             )
-//            println("${line_x[0]}, ${line_x[1]}, ${line_x[2]}, ${line_x[3]}")
-            line2.draw(line_x, 2, PVM)
-            line2.draw(line_y, 2, PVM)
-            line2.draw(line_border, 4, PVM)
+
+            line2.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
+                point_1[0], point_1[1], point_2[0], point_2[1],
+                point_2[0], point_2[1], point_3[0], point_3[1],
+                point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
             mDetections.clear()
         }
 
@@ -170,26 +178,10 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         GLES20.glGenTextures(1, hTex, 0)
         println("hTex : ${hTex[0]}")
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_S,
-            GLES20.GL_CLAMP_TO_EDGE
-        );
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_WRAP_T,
-            GLES20.GL_CLAMP_TO_EDGE
-        );
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MIN_FILTER,
-            GLES20.GL_NEAREST
-        );
-        GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-            GLES20.GL_TEXTURE_MAG_FILTER,
-            GLES20.GL_NEAREST
-        );
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
     }
 
 
@@ -225,11 +217,11 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
 
     private fun previewSession() {
 
-        texture.setDefaultBufferSize(1280, 720)
+        texture.setDefaultBufferSize(mPreviewSize.width, mPreviewSize.height)
         surface = Surface(texture)
 
         imageReader = ImageReader.newInstance(
-            1280, 720, ImageFormat.YUV_420_888,
+            mPreviewSize.width, mPreviewSize.height, ImageFormat.YUV_420_888,
             MainActivity.IMAGE_BUFFER_SIZE
         )
         imageReader.setOnImageAvailableListener({ reader ->
@@ -238,7 +230,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
             val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
             buffer.clear()
 
-            mDetections = ApriltagNative.apriltag_detect_yuv(bytes, 1280, 720)
+            mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
 
             image.close()
 
