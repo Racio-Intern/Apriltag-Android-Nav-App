@@ -1,6 +1,7 @@
 package com.example.apriltagapp.view.camera
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -11,13 +12,17 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
+import android.os.DeadObjectException
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
+import androidx.navigation.fragment.findNavController
 import com.example.apriltagapp.*
 import com.example.apriltagapp.model.baseShape.Triangle
 import java.util.*
@@ -25,7 +30,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
-class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurfaceView.Renderer,
+    SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var triangle: Triangle
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
@@ -66,9 +72,8 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
 
     private lateinit var texture: SurfaceTexture
 
-        private lateinit var hTex: IntArray
+    private lateinit var hTex: IntArray
     private var updateState = false
-
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         initTex()
@@ -115,14 +120,14 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
         }
         cameraTexture.draw()
         val points = FloatArray(8)
-        if(!mDetections.isEmpty()){
+        if (!mDetections.isEmpty()) {
             Matrix.multiplyMM(PVM, 0, V, 0, M, 0)
             Matrix.multiplyMM(PVM, 0, P, 0, PVM, 0)
 
             val temp = mDetections[0]
             for (i in 0..3) {
-                val x = 0.5f - (temp.p[2*i + 1] / 720.0f)
-                val y = 0.5f - (temp.p[2*i + 0] / 1280.0f)
+                val x = 0.5f - (temp.p[2 * i + 1] / 720.0f)
+                val y = 0.5f - (temp.p[2 * i + 0] / 1280.0f)
                 points[2 * i + 0] = x.toFloat()
                 points[2 * i + 1] = y.toFloat()
             }
@@ -146,7 +151,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
                 point_1[0], point_1[1], point_2[0], point_2[1],
                 point_2[0], point_2[1], point_3[0], point_3[1]
             )
-            println("${line_x[0]}, ${line_x[1]}, ${line_x[2]}, ${line_x[3]}")
+//            println("${line_x[0]}, ${line_x[1]}, ${line_x[2]}, ${line_x[3]}")
             line2.draw(line_x, 2, PVM)
             line2.draw(line_y, 2, PVM)
             line2.draw(line_border, 4, PVM)
@@ -165,14 +170,30 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
         GLES20.glGenTextures(1, hTex, 0)
         println("hTex : ${hTex[0]}")
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, hTex[0]);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_S,
+            GLES20.GL_CLAMP_TO_EDGE
+        );
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_T,
+            GLES20.GL_CLAMP_TO_EDGE
+        );
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MIN_FILTER,
+            GLES20.GL_NEAREST
+        );
+        GLES20.glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MAG_FILTER,
+            GLES20.GL_NEAREST
+        );
     }
 
 
-    private lateinit var cameraDevice: CameraDevice
+    private var cameraDevice: CameraDevice? = null
     private lateinit var backgroundThread: HandlerThread
     private lateinit var backgroundHandler: Handler
     private lateinit var captureSession: CameraCaptureSession
@@ -192,6 +213,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
 
         override fun onDisconnected(camera: CameraDevice) {
             camera.close()
+            cameraDevice = null
             println("카메라 종료")
         }
 
@@ -221,44 +243,49 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
             image.close()
 
         }, backgroundHandler)
-        captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-        captureRequestBuilder.addTarget(imageReader.surface)
-        captureRequestBuilder.addTarget(surface)
-        try {
-            cameraDevice.createCaptureSession(
-                listOf(surface, imageReader.surface),
-                object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigureFailed(session: CameraCaptureSession) {
-                        println("session 생성 실패")
-                    }
+        cameraDevice?.let { cameraDevice->
 
-                    override fun onConfigured(session: CameraCaptureSession) {
-                        captureSession = session
-                        captureRequestBuilder.set(
-                            CaptureRequest.CONTROL_AF_MODE,
-                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-                        )
-                        val previewRequest = captureRequestBuilder.build()
-                        println("preview request : ${previewRequest}")
-                        captureSession.setRepeatingRequest(
-                            previewRequest,
-                            null,
-                            backgroundHandler
-                        )
-                    }
-                },
-                null
-            )
-        }catch(e: CameraAccessException) {
-            println("session 생성 실패 : $e")
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+            captureRequestBuilder.addTarget(imageReader.surface)
+            captureRequestBuilder.addTarget(surface)
+            try {
+                cameraDevice.createCaptureSession(
+                    listOf(surface, imageReader.surface),
+                    object : CameraCaptureSession.StateCallback() {
+                        override fun onConfigureFailed(session: CameraCaptureSession) {
+                            println("session 생성 실패")
+                        }
+
+                        override fun onConfigured(session: CameraCaptureSession) {
+                            captureSession = session
+                            captureRequestBuilder.set(
+                                CaptureRequest.CONTROL_AF_MODE,
+                                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                            )
+                            val previewRequest = captureRequestBuilder.build()
+                            println("preview request : ${previewRequest}")
+                            captureSession.setRepeatingRequest(
+                                previewRequest,
+                                null,
+                                backgroundHandler
+                            )
+                        }
+                    },
+                    null
+                )
+            } catch (e: CameraAccessException) {
+                println("session 생성 실패 : $e")
+            }
         }
 
 
     }
 
     private fun closeCamera() {
-        captureSession.close()
-        cameraDevice.close()
+        cameraDevice?.let { cameraDevice->
+            captureSession.close()
+            cameraDevice.close()
+        }
     }
 
     private fun startBackgroundThread() {
@@ -277,13 +304,15 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
     }
 
     private fun captureStillImage() {
-        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-        captureRequestBuilder.addTarget(imageReader.surface)
-        captureSession.capture(
-            captureRequestBuilder.build(),
-            object : CameraCaptureSession.CaptureCallback() {},
-            null
-        )
+        cameraDevice?.let {cameraDevice->
+            cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+            captureRequestBuilder.addTarget(imageReader.surface)
+            captureSession.capture(
+                captureRequestBuilder.build(),
+                object : CameraCaptureSession.CaptureCallback() {},
+                null
+            )
+        }
     }
 
     private fun <T> cameraCharacteristics(cameraId: String, key: CameraCharacteristics.Key<T>): T {
@@ -311,7 +340,7 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
         return deviceId[0]
     }
 
-    private fun connectCamera() {
+    fun connectCamera() {
         val deviceId = cameraId(CameraCharacteristics.LENS_FACING_BACK)
         try {
             if (ActivityCompat.checkSelfPermission(
@@ -334,13 +363,35 @@ class MyRenderer(val view: GLSurfaceView) : GLSurfaceView.Renderer, SurfaceTextu
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             println("카메라 권한 필요")
-//            ActivityCompat.requestPermissions(
-//                액티비티,
-//                arrayOf(Manifest.permission.CAMERA),
-//                MainActivity.MY_PERMISSIONS_REQUEST_CAMERA
-//            )
         } else {
             connectCamera()
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        println("requestCode = $requestCode")
+        when (requestCode) {
+            MY_PERMISSIONS_REQUEST_CAMERA -> {
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.isNotEmpty()
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    println("승인 완료")
+                } else {
+                    println("승인 안됨")
+                }
+                return
+            }
+        }
+    }
+
+    fun onDestroy() {
+        closeCamera()
+        stopBackgroundThread()
     }
 }
