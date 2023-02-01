@@ -11,19 +11,16 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
-import android.os.DeadObjectException
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
-import androidx.navigation.fragment.findNavController
 import com.example.apriltagapp.*
-import com.example.apriltagapp.model.baseShape.Triangle
+import com.example.apriltagapp.model.baseShape.Line
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -31,11 +28,8 @@ import javax.microedition.khronos.opengles.GL10
 
 class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
-    private lateinit var triangle: Triangle
     private lateinit var cameraTexture: CameraTexture
-    private lateinit var cameraTexture2: CameraTexture2
     private lateinit var line: Line
-    private lateinit var line2: Line2
     private lateinit var surface: Surface
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     private val mPreviewSize: Size = Size(1280, 720)
@@ -81,12 +75,9 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         texture.setOnFrameAvailableListener(this)
 
         GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f)
-        // GLES20.glFinish()
+
         cameraTexture = CameraTexture(hTex[0])
-        cameraTexture2 = CameraTexture2(hTex[0])
-        triangle = Triangle()
         line = Line()
-        line2 = Line2()
 
         startBackgroundThread()
         checkCameraPermission()
@@ -130,8 +121,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         Matrix.multiplyMM(PVM, 0, V, 0, M, 0)
         Matrix.multiplyMM(PVM, 0, P, 0, PVM, 0)
 
-        //cameraTexture.draw(PVM)
-        cameraTexture2.draw(PVM)
+        cameraTexture.draw(PVM)
         val points = FloatArray(8)
         if(!mDetections.isEmpty()){
 
@@ -159,7 +149,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
                 point_2[0], point_2[1], point_3[0], point_3[1]
             )
 
-            line2.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
+            line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
                 point_1[0], point_1[1], point_2[0], point_2[1],
                 point_2[0], point_2[1], point_3[0], point_3[1],
                 point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)

@@ -1,4 +1,4 @@
-package com.example.apriltagapp
+package com.example.apriltagapp.model.baseShape
 
 import android.opengl.GLES20
 import com.example.apriltagapp.view.camera.MyRenderer
@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class Line2 {
+class Line {
 
     val VERTEX_SHADER_CODE =
             "uniform mat4 uMVPMatrix;\n" +
