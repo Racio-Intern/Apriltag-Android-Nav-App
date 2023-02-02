@@ -20,6 +20,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import com.example.apriltagapp.*
+import com.example.apriltagapp.model.baseModel.BaseShape
+import com.example.apriltagapp.model.baseModel.Drawing
+import com.example.apriltagapp.model.baseModel.Pos
 import com.example.apriltagapp.model.baseShape.Line
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -33,7 +36,9 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     private lateinit var line: Line
     private lateinit var surface: Surface
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
-    private val mPreviewSize: Size = Size(1280, 720)
+    val mPreviewSize: Size = Size(1280, 720)
+    var drawList: Array<Drawing> = emptyArray()
+    var state: Boolean = false
 
 
     private lateinit var texture: SurfaceTexture
@@ -44,7 +49,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     private var modelMatrix = FloatArray(16)
     private var viewMatrix = FloatArray(16)
     private var projectionMatrix = FloatArray(16)
-    private var PVM = FloatArray(16)
+     var PVM = FloatArray(16)
 
     init {
         view.setEGLContextClientVersion(2)
@@ -120,41 +125,20 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
 
         if (updateState) {
             texture.updateTexImage()
-
             cameraTexture.draw(PVM)
-            val points = FloatArray(8)
 
-            for (det in mDetections) {
-                for (i in 0..3) {
-                    val x = 0.5f - (det.p[2*i + 1] / mPreviewSize.height.toFloat())
-                    val y = 0.5f - (det.p[2*i + 0] / mPreviewSize.width.toFloat())
-                    points[2 * i + 0] = x.toFloat()
-                    points[2 * i + 1] = y.toFloat()
+            if(state) {
+                for(list in drawList) {
+                    if (list.type == BaseShape.LINE) {
+                        line.draw(list.pos.points, list.pos.nPoints, PVM)
+                    }
                 }
-
-                // Determine corner points
-                val point_0 = Arrays.copyOfRange(points, 0, 2)
-                val point_1 = Arrays.copyOfRange(points, 2, 4)
-                val point_2 = Arrays.copyOfRange(points, 4, 6)
-                val point_3 = Arrays.copyOfRange(points, 6, 8)
-
-                // Determine bounding boxes
-                val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
-                val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
-                val line_border = floatArrayOf(
-                    point_1[0], point_1[1], point_2[0], point_2[1],
-                    point_2[0], point_2[1], point_3[0], point_3[1]
-                )
-
-                // Draw lines
-                line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
-                    point_1[0], point_1[1], point_2[0], point_2[1],
-                    point_2[0], point_2[1], point_3[0], point_3[1],
-                    point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
+                state = false
             }
-            mDetections.clear()
-            updateState = false
         }
+
+        mDetections.clear()
+        updateState = false
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
