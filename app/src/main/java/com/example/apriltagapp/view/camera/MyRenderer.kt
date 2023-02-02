@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import com.example.apriltagapp.*
+import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.model.baseModel.BaseShape
 import com.example.apriltagapp.model.baseModel.Drawing
 import com.example.apriltagapp.model.baseModel.Pos
@@ -30,11 +31,12 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
-class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurfaceView.Renderer,
+class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val detectListener: DetectionListener) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
     private lateinit var surface: Surface
+//    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     val mPreviewSize: Size = Size(1280, 720)
     var drawList: Array<Drawing> = emptyArray()
@@ -49,7 +51,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     private var modelMatrix = FloatArray(16)
     private var viewMatrix = FloatArray(16)
     private var projectionMatrix = FloatArray(16)
-     var PVM = FloatArray(16)
+    private var PVM = FloatArray(16)
 
     init {
         view.setEGLContextClientVersion(2)
@@ -206,7 +208,12 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
             val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
             buffer.clear()
 
-            mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
+            val mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
+
+            for(detection in mDetections) {
+                detectListener.onTagDetection(detection)
+                break
+            }
 
             image.close()
 
