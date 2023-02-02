@@ -43,6 +43,8 @@ class CameraTexture(val hTex: Int) {
     private var mProgram: Int = -1
     private var pVertex: FloatBuffer
     private var pTexCoord: FloatBuffer
+    private var mPositionHandler: Int = -1
+    private var mTexCoordHandler: Int = -1
     private var mMVPMatrixHandle: Int = -1
 
     init {
@@ -84,16 +86,16 @@ class CameraTexture(val hTex: Int) {
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, matrix, 0)
 
         // mProgram 객체로부터 vertex shader의 'vPosition', 'vTexCoord' 멤버에 대한 핸들을 가져옴
-        var ph = GLES20.glGetAttribLocation(mProgram, "vPosition")
-        var tch = GLES20.glGetAttribLocation(mProgram, "vTexCoord")
+        mPositionHandler = GLES20.glGetAttribLocation(mProgram, "vPosition")
+        mTexCoordHandler = GLES20.glGetAttribLocation(mProgram, "vTexCoord")
 
         // vertex 속성을 pVertex, pTexCoord에 저장되어 있는 vertex 좌표들로 정의
-        GLES20.glVertexAttribPointer(ph, 2, GLES20.GL_FLOAT, false, 4 * 2, pVertex)
-        GLES20.glVertexAttribPointer(tch, 2, GLES20.GL_FLOAT, false, 4*2, pTexCoord)
+        GLES20.glVertexAttribPointer(mPositionHandler, 2, GLES20.GL_FLOAT, false, 4 * 2, pVertex)
+        GLES20.glVertexAttribPointer(mTexCoordHandler, 2, GLES20.GL_FLOAT, false, 4*2, pTexCoord)
 
         // vertex 속성을 활성화 시켜야 렌더링시 반영되서 그려짐
-        GLES20.glEnableVertexAttribArray(ph)
-        GLES20.glEnableVertexAttribArray(tch)
+        GLES20.glEnableVertexAttribArray(mPositionHandler)
+        GLES20.glEnableVertexAttribArray(mTexCoordHandler)
 
         // 첫 번째 Texture 활성화
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
@@ -105,8 +107,8 @@ class CameraTexture(val hTex: Int) {
         // 렌더링
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
-        GLES20.glDisableVertexAttribArray(ph)
-        GLES20.glDisableVertexAttribArray(tch)
+        GLES20.glDisableVertexAttribArray(mPositionHandler)
+        GLES20.glDisableVertexAttribArray(mTexCoordHandler)
         GLES20.glUseProgram(0)
     }
 }
