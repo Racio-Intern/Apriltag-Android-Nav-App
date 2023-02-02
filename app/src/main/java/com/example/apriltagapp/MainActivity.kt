@@ -44,15 +44,7 @@ class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
         apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
 
 
-        // Spots Initialize
-        val spots: Array<Spot> = arrayOf(Spot("항공대", 1000), Spot("현택이네", 1001), Spot("혁수네", 1002), Spot("은기네", 1003))
 
-        // Tag Graph Initialize
-        val tagGraph = TagGraph(tags_1)
-        for(spot in spots) {
-            tagGraph.tags[0].addSpot(spot)
-        }
-        tagGraph.printGraph()
     }
 
     override fun onSupportNavigateUp(): Boolean {
