@@ -2,7 +2,7 @@ package com.example.apriltagapp.model
 
 class TagGraph(val tags: Array<Tag>) {
 
-    private fun findTagById(id: Int): Tag?{
+    fun findTagById(id: Int): Tag?{
         for(tag in tags) {
             if(tag.id == id) {
                 return tag
@@ -14,9 +14,9 @@ class TagGraph(val tags: Array<Tag>) {
     fun printGraph() {
         for(tag in tags) {
             println("[${tag.id}번 태그]")
-            println("Spots : ${tag.spots.toString()}")
+            println("Spots : ${tag.spots}")
             for(linkedTag in tag.linkedTags) {
-                println("${linkedTag.id}번 태그로의 거리 : ${linkedTag.distance}, 방향 : ${linkedTag.direction}")
+                println("${linkedTag.value.id}번 태그로의 거리 : ${linkedTag.value.distance}, 방향 : ${linkedTag.value.direction}")
             }
             println("----------")
         }

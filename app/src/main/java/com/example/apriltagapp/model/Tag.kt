@@ -4,7 +4,7 @@ data class Tag(
     /** 고유 태그 id */
     val id: Int = -1, // default value
     /** 연결된 태그 */
-    val linkedTags: Array<LinkedTag> = arrayOf() // id, 가중치
+    val linkedTags: HashMap<Int, LinkedTag> = hashMapOf() // id, 가중치
 ) {
     /** 태그가 담고 있는 장소 */
     val spots: MutableList<Spot> = mutableListOf()
@@ -20,8 +20,7 @@ data class Tag(
     }
 
     override fun hashCode(): Int {
-        var result = id
-        result = 31 * result + linkedTags.contentHashCode()
-        return result
+        return super.hashCode()
     }
+
 }
