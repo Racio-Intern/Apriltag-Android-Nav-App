@@ -48,7 +48,7 @@ class CameraViewModel : ViewModel() {
     private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
         val nextTag = tagGraph.shortestPath(detection.id, destination)
 
-        _shape.value = Rectangle(renderer, detection.p) // tag의 결과가 rectangle이라고 치고
+        _shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
 
 
 
