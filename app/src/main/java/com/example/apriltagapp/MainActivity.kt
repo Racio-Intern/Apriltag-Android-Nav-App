@@ -12,6 +12,9 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.apriltagapp.ApriltagNative.*
 import com.example.apriltagapp.databinding.ActivityMainBinding
+import com.example.apriltagapp.model.Spot
+import com.example.apriltagapp.model.TagGraph
+import com.example.apriltagapp.model.tags_1
 import com.example.apriltagapp.view.camera.MyRenderer
 
 class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
@@ -39,6 +42,17 @@ class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
 
         native_init()
         apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
+
+
+        // Spots Initialize
+        val spots: Array<Spot> = arrayOf(Spot("항공대", 1000), Spot("현택이네", 1001), Spot("혁수네", 1002), Spot("은기네", 1003))
+
+        // Tag Graph Initialize
+        val tagGraph = TagGraph(tags_1)
+        for(spot in spots) {
+            tagGraph.tags[0].addSpot(spot)
+        }
+        tagGraph.printGraph()
     }
 
     override fun onSupportNavigateUp(): Boolean {

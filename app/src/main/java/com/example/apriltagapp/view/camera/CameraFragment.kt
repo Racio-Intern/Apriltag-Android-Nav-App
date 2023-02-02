@@ -11,6 +11,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.navigation.fragment.findNavController
+import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 
 
@@ -40,6 +42,17 @@ class CameraFragment : Fragment(){
         binding = null
     }
 
+    override fun onResume() {
+        super.onResume()
+        renderer.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        renderer.onPause()
+    }
+
+
     private fun checkCameraPermission() {
         context?.let { context->
             if (ContextCompat.checkSelfPermission(
@@ -57,4 +70,7 @@ class CameraFragment : Fragment(){
         super.onDestroyView()
         renderer.onDestroy()
     }
+
+
+
 }
