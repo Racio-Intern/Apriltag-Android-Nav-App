@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import com.example.apriltagapp.*
 import com.example.apriltagapp.model.baseShape.Line
 import java.util.*
+import java.util.concurrent.Semaphore
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -66,7 +67,11 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         const val IMAGE_BUFFER_SIZE = 1
     }
 
+
+    private var isSurfaceCreated = false
+
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        isSurfaceCreated = true
         initTex()
         texture = SurfaceTexture(hTex[0])
         texture.setOnFrameAvailableListener(this)
@@ -176,6 +181,8 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
     private lateinit var imageReader: ImageReader
 
+    private val cameraOpenCloseLock = Semaphore(1)
+
     private val cameraManager by lazy {
         view.context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     }
@@ -188,6 +195,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         }
 
         override fun onDisconnected(camera: CameraDevice) {
+            cameraOpenCloseLock.release()
             camera.close()
             cameraDevice = null
             println("카메라 종료")
@@ -316,7 +324,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         return deviceId[0]
     }
 
-    fun connectCamera() {
+    private fun connectCamera() {
         val deviceId = cameraId(CameraCharacteristics.LENS_FACING_BACK)
         try {
             if (ActivityCompat.checkSelfPermission(
@@ -367,6 +375,18 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     }
 
     fun onDestroy() {
+        closeCamera()
+        stopBackgroundThread()
+    }
+
+    fun onResume() {
+        if(isSurfaceCreated ){
+            startBackgroundThread()
+            checkCameraPermission()
+        }
+    }
+
+    fun onPause() {
         closeCamera()
         stopBackgroundThread()
     }
