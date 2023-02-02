@@ -11,14 +11,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.apriltagapp.ApriltagDetection
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
+import com.example.apriltagapp.listener.DetectionListener
+import com.example.apriltagapp.model.baseModel.Pos
+import com.example.apriltagapp.model.baseShape.Rectangle
 
 
-class CameraFragment : Fragment(){
+class CameraFragment : Fragment(), DetectionListener{
     var binding: FragmentCameraBinding? = null
     lateinit var renderer: MyRenderer
+    val viewModel: CameraViewModel by viewModels()
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,7 +39,11 @@ class CameraFragment : Fragment(){
 
         val glSurfaceView = GLSurfaceView(this.context)
         val surface = glSurfaceView.holder.surface
-        renderer = MyRenderer(glSurfaceView, this)
+        renderer = MyRenderer(glSurfaceView, this, this)
+
+        viewModel.shape.observe(viewLifecycleOwner) {
+            it.draw()
+        }
 
         return glSurfaceView
     }
@@ -71,6 +82,9 @@ class CameraFragment : Fragment(){
         renderer.onDestroy()
     }
 
+    override fun onTagDetection(detection: ApriltagDetection){
+        viewModel.onDetect(detection, renderer)
+    }
 
 
 }

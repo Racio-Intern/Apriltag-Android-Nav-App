@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import com.example.apriltagapp.*
+import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.model.baseShape.Line
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -27,12 +28,12 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
-class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurfaceView.Renderer,
+class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val detectListener: DetectionListener) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
     private lateinit var surface: Surface
-    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
+//    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     private val mPreviewSize: Size = Size(1280, 720)
 
 
@@ -124,35 +125,35 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
             cameraTexture.draw(PVM)
             val points = FloatArray(8)
 
-            for (det in mDetections) {
-                for (i in 0..3) {
-                    val x = 0.5f - (det.p[2*i + 1] / mPreviewSize.height.toFloat())
-                    val y = 0.5f - (det.p[2*i + 0] / mPreviewSize.width.toFloat())
-                    points[2 * i + 0] = x.toFloat()
-                    points[2 * i + 1] = y.toFloat()
-                }
-
-                // Determine corner points
-                val point_0 = Arrays.copyOfRange(points, 0, 2)
-                val point_1 = Arrays.copyOfRange(points, 2, 4)
-                val point_2 = Arrays.copyOfRange(points, 4, 6)
-                val point_3 = Arrays.copyOfRange(points, 6, 8)
-
-                // Determine bounding boxes
-                val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
-                val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
-                val line_border = floatArrayOf(
-                    point_1[0], point_1[1], point_2[0], point_2[1],
-                    point_2[0], point_2[1], point_3[0], point_3[1]
-                )
-
-                // Draw lines
-                line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
-                    point_1[0], point_1[1], point_2[0], point_2[1],
-                    point_2[0], point_2[1], point_3[0], point_3[1],
-                    point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
-            }
-            mDetections.clear()
+//            for (det in mDetections) {
+//                for (i in 0..3) {
+//                    val x = 0.5f - (det.p[2*i + 1] / mPreviewSize.height.toFloat())
+//                    val y = 0.5f - (det.p[2*i + 0] / mPreviewSize.width.toFloat())
+//                    points[2 * i + 0] = x.toFloat()
+//                    points[2 * i + 1] = y.toFloat()
+//                }
+//
+//                // Determine corner points
+//                val point_0 = Arrays.copyOfRange(points, 0, 2)
+//                val point_1 = Arrays.copyOfRange(points, 2, 4)
+//                val point_2 = Arrays.copyOfRange(points, 4, 6)
+//                val point_3 = Arrays.copyOfRange(points, 6, 8)
+//
+//                // Determine bounding boxes
+//                val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
+//                val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
+//                val line_border = floatArrayOf(
+//                    point_1[0], point_1[1], point_2[0], point_2[1],
+//                    point_2[0], point_2[1], point_3[0], point_3[1]
+//                )
+//
+//                // Draw lines
+//                line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
+//                    point_1[0], point_1[1], point_2[0], point_2[1],
+//                    point_2[0], point_2[1], point_3[0], point_3[1],
+//                    point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
+//            }
+//            mDetections.clear()
             updateState = false
         }
     }
@@ -222,7 +223,12 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
             val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
             buffer.clear()
 
-            mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
+            val mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
+
+            for(detection in mDetections) {
+                detectListener.onTagDetection(detection)
+                break
+            }
 
             image.close()
 

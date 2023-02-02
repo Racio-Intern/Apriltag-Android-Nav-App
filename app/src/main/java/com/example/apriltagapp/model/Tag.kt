@@ -2,7 +2,7 @@ package com.example.apriltagapp.model
 
 data class Tag(
     /** 고유 태그 id */
-    val id: Int,
+    val id: Int = -1, // default value
     /** 연결된 태그 */
     val linkedTags: Array<LinkedTag> = arrayOf() // id, 가중치
 ) {
