@@ -5,10 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.apriltagapp.ApriltagDetection
 import com.example.apriltagapp.model.*
-import com.example.apriltagapp.model.baseModel.Drawing
 import com.example.apriltagapp.model.baseModel.Shape
 import com.example.apriltagapp.model.baseShape.Rectangle
-import com.example.apriltagapp.model.baseShape.Triangle
 
 class CameraViewModel : ViewModel() {
     private val _curTag  = MutableLiveData<Tag>(Tag()) // default 값
