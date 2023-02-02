@@ -57,5 +57,4 @@ class CameraFragment : Fragment(){
         super.onDestroyView()
         renderer.onDestroy()
     }
-
 }

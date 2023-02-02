@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class CameraTexture(var hTex: Int) {
+class CameraTexture(val hTex: Int) {
     val VERTEX_SHADER_CODE = "" +
             "uniform mat4 uMVPMatrix;\n" +
             "attribute vec4 vPosition;\n" +

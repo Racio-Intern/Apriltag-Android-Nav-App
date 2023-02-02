@@ -34,11 +34,16 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     private val mPreviewSize: Size = Size(1280, 720)
 
+
+    private lateinit var texture: SurfaceTexture
+    private lateinit var hTex: IntArray
+    private var updateState = false
+
     // Projection * View * Model matrix
-    var M = FloatArray(16)
-    var V = FloatArray(16)
-    var P = FloatArray(16)
-    var PVM = FloatArray(16)
+    private var modelMatrix = FloatArray(16)
+    private var viewMatrix = FloatArray(16)
+    private var projectionMatrix = FloatArray(16)
+    private var PVM = FloatArray(16)
 
     init {
         view.setEGLContextClientVersion(2)
@@ -59,22 +64,15 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         const val CAMERA_BACK = "0"
         const val CAMERA_FRONT = "1"
         const val IMAGE_BUFFER_SIZE = 1
-
-
     }
-
-
-    private lateinit var texture: SurfaceTexture
-
-    private lateinit var hTex: IntArray
-    private var updateState = false
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         initTex()
         texture = SurfaceTexture(hTex[0])
         texture.setOnFrameAvailableListener(this)
 
-        GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f)
+        // Set the background frame color
+        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
 
         cameraTexture = CameraTexture(hTex[0])
         line = Line()
@@ -88,10 +86,9 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         GLES20.glViewport(0, 0, width, height)
 
         // matrix start~
-
-        Matrix.setIdentityM(V, 0)
-        Matrix.translateM(V, 0, width / 2.0f, height / 2.0f, 0.0f)
-        Matrix.orthoM(P, 0, 0.0f, width.toFloat(), 0f, height.toFloat(), -1.0f, 1.0f)
+        Matrix.setIdentityM(viewMatrix, 0)
+        Matrix.translateM(viewMatrix, 0, width / 2.0f, height / 2.0f, 0.0f)
+        Matrix.orthoM(projectionMatrix, 0, 0.0f, width.toFloat(), 0f, height.toFloat(), -1.0f, 1.0f)
 
         // Update surface dimensions and scale preview to fit the surface
         // Scaling is done to maintain aspect ratio but maximally fill the surface
@@ -106,56 +103,53 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
         val draw_width = (mPreviewSize.width * scale_ratio).toInt()
         val draw_height = (mPreviewSize.height * scale_ratio).toInt()
 
-        Matrix.setIdentityM(M, 0)
-        Matrix.scaleM(M, 0, draw_height.toFloat(), draw_width.toFloat(), 1.0f)
+        Matrix.setIdentityM(modelMatrix, 0)
+        Matrix.scaleM(modelMatrix, 0, draw_height.toFloat(), draw_width.toFloat(), 1.0f)
+        Matrix.multiplyMM(PVM, 0, viewMatrix, 0, modelMatrix, 0)
+        Matrix.multiplyMM(PVM, 0, projectionMatrix, 0, PVM, 0)
     }
 
     override fun onDrawFrame(gl: GL10?) {
-
+        // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
         if (updateState) {
             texture.updateTexImage()
+
+            cameraTexture.draw(PVM)
+            val points = FloatArray(8)
+
+            for (det in mDetections) {
+                for (i in 0..3) {
+                    val x = 0.5f - (det.p[2*i + 1] / mPreviewSize.height.toFloat())
+                    val y = 0.5f - (det.p[2*i + 0] / mPreviewSize.width.toFloat())
+                    points[2 * i + 0] = x.toFloat()
+                    points[2 * i + 1] = y.toFloat()
+                }
+
+                // Determine corner points
+                val point_0 = Arrays.copyOfRange(points, 0, 2)
+                val point_1 = Arrays.copyOfRange(points, 2, 4)
+                val point_2 = Arrays.copyOfRange(points, 4, 6)
+                val point_3 = Arrays.copyOfRange(points, 6, 8)
+
+                // Determine bounding boxes
+                val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
+                val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
+                val line_border = floatArrayOf(
+                    point_1[0], point_1[1], point_2[0], point_2[1],
+                    point_2[0], point_2[1], point_3[0], point_3[1]
+                )
+
+                // Draw lines
+                line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
+                    point_1[0], point_1[1], point_2[0], point_2[1],
+                    point_2[0], point_2[1], point_3[0], point_3[1],
+                    point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
+            }
+            mDetections.clear()
             updateState = false
         }
-
-        Matrix.multiplyMM(PVM, 0, V, 0, M, 0)
-        Matrix.multiplyMM(PVM, 0, P, 0, PVM, 0)
-
-        cameraTexture.draw(PVM)
-        val points = FloatArray(8)
-        if(!mDetections.isEmpty()){
-
-            val temp = mDetections[0]
-            for (i in 0..3) {
-                val x = 0.5f - (temp.p[2*i + 1] / mPreviewSize.height.toFloat())
-                val y = 0.5f - (temp.p[2*i + 0] / mPreviewSize.width.toFloat())
-                points[2 * i + 0] = x.toFloat()
-                points[2 * i + 1] = y.toFloat()
-            }
-
-            // Determine corner points
-            val point_0 = Arrays.copyOfRange(points, 0, 2)
-            val point_1 = Arrays.copyOfRange(points, 2, 4)
-            val point_2 = Arrays.copyOfRange(points, 4, 6)
-            val point_3 = Arrays.copyOfRange(points, 6, 8)
-
-            // Determine bounding boxes
-
-            // Determine bounding boxes
-            val line_x = floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1])
-            val line_y = floatArrayOf(point_0[0], point_0[1], point_3[0], point_3[1])
-            val line_border = floatArrayOf(
-                point_1[0], point_1[1], point_2[0], point_2[1],
-                point_2[0], point_2[1], point_3[0], point_3[1]
-            )
-
-            line.draw(floatArrayOf(point_0[0], point_0[1], point_1[0], point_1[1],
-                point_1[0], point_1[1], point_2[0], point_2[1],
-                point_2[0], point_2[1], point_3[0], point_3[1],
-                point_3[0], point_3[1], point_0[0], point_0[1]), 8, PVM)
-            mDetections.clear()
-        }
-
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
