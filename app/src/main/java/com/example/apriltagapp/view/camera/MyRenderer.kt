@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import com.example.apriltagapp.*
+import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.model.baseShape.Line
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -27,7 +28,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 
-class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurfaceView.Renderer,
+class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val detectListener: DetectionListener) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
@@ -223,6 +224,11 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment) : GLSurf
             buffer.clear()
 
             mDetections = ApriltagNative.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
+
+            for(detection in mDetections) {
+                detectListener.onTagDetection(detection)
+                break
+            }
 
             image.close()
 
