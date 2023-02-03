@@ -9,14 +9,12 @@ import com.example.apriltagapp.model.baseModel.Shape
 import com.example.apriltagapp.model.baseShape.Rectangle
 
 class CameraViewModel : ViewModel() {
-    private val _curTag  = MutableLiveData<Tag>(Tag()) // default 값
-//    private val _drawList = MutableLiveData<Array<Drawing>>()
+    private val _curTag  = MutableLiveData<Tag>() // default 값
     private val _shape = MutableLiveData<Shape>()
+    private var direction = Direction.DEFAULT
 
     val curTag: LiveData<Tag>
         get() = _curTag
-//    val drawList: LiveData<Array<Drawing>>
-//        get() = _drawList
     val shape: LiveData<Shape>
         get() = _shape
 
@@ -27,7 +25,11 @@ class CameraViewModel : ViewModel() {
         arrayOf(Spot("항공대", 1000), Spot("현택이네", 1001), Spot("혁수네", 1002), Spot("은기네", 1003))
 
     // Tag Graph Initialize
-    val tagGraph = TagGraph(tags_1)
+    private val tagGraph = TagGraph(tags_1)
+
+    fun onFragmentCreated() {
+        _curTag.value = tagGraph.tagFamily.getOrDefault(1, Tag(1))
+    }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection, renderer: MyRenderer) {
@@ -41,22 +43,50 @@ class CameraViewModel : ViewModel() {
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
     private fun onPreviousTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
-
+        _shape.postValue(createShape(direction, renderer, detection.p))
+        println("현재 태그 : ${_curTag.value?.id}")
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
-        val nextTag = tagGraph.shortestPath(detection.id, destination)
+        val nextTag = try {
+            tagGraph.shortestPath(detection.id, destination)
+        }catch(e: Exception) {
+            // shortest Path 검색 결과가 없을 때
+            return
+        }
 
-        _shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
+        direction = _curTag.value?.run{
+            this.linkedTags[nextTag.id]?.direction
+        }?:Direction.DEFAULT
 
+        _curTag.postValue(tagGraph.tagFamily[detection.id])
+        println("새로운 태그 : ${_curTag.value?.id} / 목적지 : ${nextTag.id} / direction : $direction")
+        if(direction == Direction.DEFAULT) {
+            println("direction을 찾지 못했습니다.")
+            return
+        }
+        _shape.postValue(createShape(direction, renderer, detection.p))
+    }
 
+    private fun createShape(direction: Direction, renderer: MyRenderer, drawPos: DoubleArray): Shape {
+        return when(direction) {
 
-//        for (tag in curTag.linkedTags) {
-//            if (nextTag.id == tag.id) {
-//                _shape.value = Drawing(detection.id, )
-//            }
-//        }
+            Direction.DEFAULT ->
+                Rectangle(renderer, drawPos)
 
+            Direction.LEFT ->
+                Rectangle(renderer, drawPos)
+
+            Direction.RIGHT ->
+                Rectangle(renderer, drawPos)
+
+            Direction.BACKWARDS ->
+                Rectangle(renderer, drawPos)
+
+            Direction.STRAIT ->
+                Rectangle(renderer, drawPos)
+
+        }
     }
 }
