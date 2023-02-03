@@ -73,21 +73,20 @@ class CameraViewModel : ViewModel() {
         return when(direction) {
 
         //_shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
-        _shape.postValue(Arrow(renderer, detection.p, 1))
             Direction.DEFAULT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.LEFT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.RIGHT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.BACKWARDS ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.STRAIT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
         }
     }

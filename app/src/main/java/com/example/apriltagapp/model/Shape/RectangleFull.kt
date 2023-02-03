@@ -12,7 +12,7 @@ class RectangleFull(renderer: MyRenderer, det: DoubleArray): Shape(renderer) {
 
     init {
         val points = FloatArray(8)
-        println("x : ${det[0]}, y : ${det[1]}")
+
         for( i in 0..3) {
             val x = 1f - (det[2*i + 1] / renderer.mPreviewSize.height.toFloat())
             val y = 1f - (det[2*i + 0] / renderer.mPreviewSize.width.toFloat())
