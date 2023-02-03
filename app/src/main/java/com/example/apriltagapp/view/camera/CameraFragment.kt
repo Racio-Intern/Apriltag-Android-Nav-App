@@ -1,7 +1,6 @@
 package com.example.apriltagapp.view.camera
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.opengl.GLSurfaceView
 import android.os.Bundle
@@ -12,13 +11,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
 import com.example.apriltagapp.ApriltagDetection
-import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.DetectionListener
-import com.example.apriltagapp.model.baseModel.Pos
-import com.example.apriltagapp.model.baseShape.Rectangle
 
 
 class CameraFragment : Fragment(), DetectionListener{
