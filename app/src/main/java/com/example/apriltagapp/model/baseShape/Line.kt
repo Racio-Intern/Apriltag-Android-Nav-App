@@ -65,7 +65,7 @@ class Line {
         colorHandle = GLES20.glGetUniformLocation(mProgram, "vColor")
         GLES20.glUniform4fv(colorHandle, 1, color, 0)
 
-        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix")
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, matrix, 0)
 
         GLES20.glLineWidth(4.0f)
