@@ -11,6 +11,7 @@ import com.example.apriltagapp.model.baseShape.Rectangle
 class CameraViewModel : ViewModel() {
     private val _curTag  = MutableLiveData<Tag>() // default 값
     private val _shape = MutableLiveData<Shape>()
+    private var direction = Direction.DEFAULT
 
     val curTag: LiveData<Tag>
         get() = _curTag
@@ -24,36 +25,44 @@ class CameraViewModel : ViewModel() {
         arrayOf(Spot("항공대", 1000), Spot("현택이네", 1001), Spot("혁수네", 1002), Spot("은기네", 1003))
 
     // Tag Graph Initialize
-    val tagGraph = TagGraph(tags_1)
+    private val tagGraph = TagGraph(tags_1)
 
     fun onFragmentCreated() {
-        _curTag.value = tagGraph.tags[0]
+        _curTag.value = tagGraph.tagFamily.getOrDefault(1, Tag(1))
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection, renderer: MyRenderer) {
-//        if(curTag.value?.id == detection.id) {
-//            onPreviousTagArrival(detection, renderer)
-//        }
-//        else {
+        if(curTag.value?.id == detection.id) {
+            onPreviousTagArrival(detection, renderer)
+        }
+        else {
             onNewTagArrival(detection, renderer)
-//        }
+        }
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
     private fun onPreviousTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
-
+        _shape.postValue(createShape(direction, renderer, detection.p))
+        println("현재 태그 : ${_curTag.value?.id}")
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
-        val nextTag = tagGraph.shortestPath(detection.id, destination)
-        val direction = _curTag.value?.run{
-            this.linkedTags[nextTag.id]?.direction
+        val nextTag = try {
+            tagGraph.shortestPath(detection.id, destination)
+        }catch(e: Exception) {
+            // shortest Path 검색 결과가 없을 때
+            return
         }
-        _curTag.postValue(tagGraph.findTagById(detection.id))
-        println("현재 태그 : ${_curTag.value?.id} / 목적지 : ${nextTag.id} / direction : $direction")
-        if(direction == null) {
+
+        direction = _curTag.value?.run{
+            this.linkedTags[nextTag.id]?.direction
+        }?:Direction.DEFAULT
+
+        _curTag.postValue(tagGraph.tagFamily[detection.id])
+        println("새로운 태그 : ${_curTag.value?.id} / 목적지 : ${nextTag.id} / direction : $direction")
+        if(direction == Direction.DEFAULT) {
             println("direction을 찾지 못했습니다.")
             return
         }
