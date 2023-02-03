@@ -5,8 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.apriltagapp.ApriltagDetection
 import com.example.apriltagapp.model.*
+import com.example.apriltagapp.model.Shape.Arrow
+import com.example.apriltagapp.model.Shape.Rectangle
+import com.example.apriltagapp.model.Shape.RectangleFull
 import com.example.apriltagapp.model.baseModel.Shape
-import com.example.apriltagapp.model.baseShape.Rectangle
+import com.example.apriltagapp.model.baseShape.NewTriangle
 
 class CameraViewModel : ViewModel() {
     private val _curTag  = MutableLiveData<Tag>(Tag()) // default 값
@@ -48,7 +51,8 @@ class CameraViewModel : ViewModel() {
     private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
         val nextTag = tagGraph.shortestPath(detection.id, destination)
 
-        _shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
+        //_shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
+        _shape.postValue(Arrow(renderer, detection.p, 1))
 
 
 
