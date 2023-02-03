@@ -1,6 +1,7 @@
 package com.example.apriltagapp.model.Shape
 
 import android.graphics.PointF
+import com.example.apriltagapp.model.Direction
 import com.example.apriltagapp.model.baseModel.BaseShape
 import com.example.apriltagapp.model.baseModel.Drawing
 import com.example.apriltagapp.model.baseModel.Pos
@@ -43,7 +44,7 @@ import java.util.*
  ------------------------------------------> +y
  */
 
-class Arrow(renderer: MyRenderer, det: DoubleArray, direction: Int): Shape(renderer) {
+class Arrow(renderer: MyRenderer, det: DoubleArray, direction: Direction): Shape(renderer) {
     override lateinit var drawList: ArrayList<Drawing>
     private val pointA: PointF
     private val pointB: PointF
@@ -84,7 +85,7 @@ class Arrow(renderer: MyRenderer, det: DoubleArray, direction: Int): Shape(rende
 
         // 2. draw triangle
         val trianglePoints = FloatArray(6)
-        if (direction == 0) { // right
+        if (direction == Direction.RIGHT) { // right
             trianglePoints[0] = (2.0f * det[2 * 1 + 0] - det[2 * 3 + 0]).toFloat()
             trianglePoints[1] = (2.0f * det[2 * 1 + 1] - det[2 * 3 + 1]).toFloat()
 
@@ -94,7 +95,7 @@ class Arrow(renderer: MyRenderer, det: DoubleArray, direction: Int): Shape(rende
             trianglePoints[4] = ((pointB.x - pointA.x) * 2.0f + pointB.x)
             trianglePoints[5] = ((pointB.y - pointA.y) * 2.0f + pointB.y)
         }
-        else if(direction == 1){ // left
+        else if(direction == Direction.LEFT){ // left
             trianglePoints[0] = (2.0f * det[2 * 3 + 0] - det[2 * 1 + 0]).toFloat()
             trianglePoints[1] = (2.0f * det[2 * 3 + 1] - det[2 * 1 + 1]).toFloat()
 
