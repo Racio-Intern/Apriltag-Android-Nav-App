@@ -1,4 +1,4 @@
-package com.example.apriltagapp.model.baseShape
+package com.example.apriltagapp.model.Shape
 
 import com.example.apriltagapp.model.baseModel.BaseShape
 import com.example.apriltagapp.model.baseModel.Drawing
@@ -8,7 +8,7 @@ import com.example.apriltagapp.view.camera.MyRenderer
 import java.util.*
 
 class Rectangle(renderer: MyRenderer, det: DoubleArray): Shape(renderer) {
-    override lateinit var drawList: Array<Drawing>
+    override lateinit var drawList: ArrayList<Drawing>
 
     init {
         val points = FloatArray(8)
@@ -31,7 +31,7 @@ class Rectangle(renderer: MyRenderer, det: DoubleArray): Shape(renderer) {
             point_3[0], point_3[1], point_0[0], point_0[1])
 
         val pos = Pos(2, 8, result)
-        drawList = arrayOf(Drawing(BaseShape.LINE, pos, floatArrayOf(1.0f, 1.0f, 0.0f, 1.0f)))
+        drawList = arrayListOf(Drawing(BaseShape.LINE, pos, floatArrayOf(1.0f, 1.0f, 0.0f, 1.0f)))
     }
 
 }

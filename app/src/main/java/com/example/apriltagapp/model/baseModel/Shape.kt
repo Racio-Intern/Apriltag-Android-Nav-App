@@ -13,7 +13,8 @@ data class Drawing(
 )
 
 abstract class Shape(val renderer: MyRenderer){
-    abstract var drawList: Array<Drawing>
+
+    abstract var drawList: ArrayList<Drawing>
     fun draw() {
         renderer.drawList = drawList
         renderer.state = true

@@ -23,8 +23,8 @@ import com.example.apriltagapp.*
 import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.model.baseModel.BaseShape
 import com.example.apriltagapp.model.baseModel.Drawing
-import com.example.apriltagapp.model.baseModel.Pos
 import com.example.apriltagapp.model.baseShape.Line
+import com.example.apriltagapp.model.baseShape.Triangle
 import java.util.*
 import java.util.concurrent.Semaphore
 import javax.microedition.khronos.egl.EGLConfig
@@ -35,11 +35,12 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
     SurfaceTexture.OnFrameAvailableListener, OnRequestPermissionsResultCallback {
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
+    private lateinit var triangle: Triangle
     private lateinit var surface: Surface
 //    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     val mPreviewSize: Size = Size(1280, 720)
-    var drawList: Array<Drawing> = emptyArray()
+    var drawList: ArrayList<Drawing> = arrayListOf()
     var state: Boolean = false
 
 
@@ -88,6 +89,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
 
         cameraTexture = CameraTexture(hTex[0])
         line = Line()
+        triangle = Triangle()
 
         startBackgroundThread()
         checkCameraPermission()
@@ -133,6 +135,10 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
                 for(list in drawList) {
                     if (list.type == BaseShape.LINE) {
                         line.draw(list.pos.points, list.pos.nPoints, PVM)
+                    }
+                    else if (list.type == BaseShape.TRIANGLE) {
+                        triangle.draw(list.pos.points, list.pos.nPoints, PVM)
+                        //println("x  ${list.pos.points[0]}, y : ${list.pos.points[1]}")
                     }
                 }
                 state = false

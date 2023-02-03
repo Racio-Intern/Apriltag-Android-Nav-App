@@ -5,8 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.apriltagapp.ApriltagDetection
 import com.example.apriltagapp.model.*
+import com.example.apriltagapp.model.Shape.Arrow
 import com.example.apriltagapp.model.baseModel.Shape
-import com.example.apriltagapp.model.baseShape.Rectangle
 
 class CameraViewModel : ViewModel() {
     private val _curTag  = MutableLiveData<Tag>() // default 값
@@ -72,20 +72,21 @@ class CameraViewModel : ViewModel() {
     private fun createShape(direction: Direction, renderer: MyRenderer, drawPos: DoubleArray): Shape {
         return when(direction) {
 
+        //_shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
             Direction.DEFAULT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.LEFT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.RIGHT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.BACKWARDS ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
             Direction.STRAIT ->
-                Rectangle(renderer, drawPos)
+                Arrow(renderer, drawPos, direction)
 
         }
     }
