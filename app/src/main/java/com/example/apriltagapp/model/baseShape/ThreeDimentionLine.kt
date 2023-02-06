@@ -1,18 +1,19 @@
 package com.example.apriltagapp.model.baseShape
 
 import android.opengl.GLES20
+import com.example.apriltagapp.model.baseModel.Pos
 import com.example.apriltagapp.view.camera.MyRenderer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class Line {
+class ThreeDimentionLine {
 
     val VERTEX_SHADER_CODE =
             "uniform mat4 uMVPMatrix;\n" +
-            "attribute vec4 vPosition;\n" +
+            "attribute vec3 vPosition;\n" +
             "void main(){" +
-            "   gl_Position = uMVPMatrix * vPosition;" +
+            "   gl_Position = uMVPMatrix * vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);" +
             "}";
 
     val FRAGMENT_SHADER_CODE = "precision mediump float;" +
@@ -21,7 +22,7 @@ class Line {
             "gl_FragColor = vColor;" +
             "}"
 
-    private val color = arrayOf(0.0f, 1.0f, 1.0f, 1.0f).toFloatArray()
+    private val color = arrayOf(1.0f, 0.0f, 0.0f, 1.0f).toFloatArray()
     private var vertexBuffer: FloatBuffer
     private var mProgram: Int = -1
     private var positionHandle: Int = -1
@@ -44,23 +45,23 @@ class Line {
         GLES20.glLinkProgram(mProgram)
     }
 
-    fun draw(points: FloatArray, nPoints: Int, matrix: FloatArray) {
+    fun draw(pos: Pos, matrix: FloatArray) {
         // Reuse points buffer if possible
-        if (vertexBuffer.capacity() < (2 * nPoints)) {
-            val byteBuffer = ByteBuffer.allocateDirect(4 * 2 * nPoints)
+        if (vertexBuffer.capacity() < (pos.dimension * pos.nPoints)) {
+            val byteBuffer = ByteBuffer.allocateDirect(4 * pos.dimension * pos.nPoints)
             byteBuffer.order(ByteOrder.nativeOrder())
             vertexBuffer = byteBuffer.asFloatBuffer()
         }
 
         vertexBuffer.position(0)
-        vertexBuffer.put(points, 0, 2 * nPoints)
+        vertexBuffer.put(pos.points, 0, pos.dimension * pos.nPoints)
         vertexBuffer.position(0)
 
         GLES20.glUseProgram(mProgram)
 
         positionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition")
         GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer)
+        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 3 * 4, vertexBuffer)
 
         colorHandle = GLES20.glGetUniformLocation(mProgram, "vColor")
         GLES20.glUniform4fv(colorHandle, 1, color, 0)
@@ -68,8 +69,8 @@ class Line {
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix")
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, matrix, 0)
 
-        GLES20.glLineWidth(4.0f)
-        GLES20.glDrawArrays(GLES20.GL_LINES, 0, nPoints)
+        GLES20.glLineWidth(8.0f)
+        GLES20.glDrawArrays(GLES20.GL_LINES, 0, pos.nPoints)
 
         GLES20.glDisableVertexAttribArray(positionHandle)
         GLES20.glDisableVertexAttribArray(colorHandle)
