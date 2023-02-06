@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "505949691617",
+    "project_id": "apriltagapp",
+    "storage_bucket": "apriltagapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:505949691617:android:c67d12e23eefed9955e1a0",
+        "android_client_info": {
+          "package_name": "com.example.apriltagapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "505949691617-n6p5cvmjk1redsmjgbusfv4mqkt9nu0i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNJr-kwXoNNC6hcHQLqsFIp53EIpRCNQ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "505949691617-n6p5cvmjk1redsmjgbusfv4mqkt9nu0i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
