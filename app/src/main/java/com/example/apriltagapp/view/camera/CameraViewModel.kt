@@ -3,37 +3,43 @@ package com.example.apriltagapp.view.camera
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.apriltagapp.ApriltagDetection
 import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.Shape.Arrow
 import com.example.apriltagapp.model.baseModel.Shape
+import com.example.apriltagapp.model.repository.TagFamilyRepository
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
-    private val _curTag  = MutableLiveData<Tag>() // default 값
     private val _shape = MutableLiveData<Shape>()
     private var direction = Direction.DEFAULT
+    private val tagFamilyRepository = TagFamilyRepository()
+    private val _tagFamily = MutableLiveData<TagFamily>(TagFamily((tags_1)))
 
-    val curTag: LiveData<Tag>
-        get() = _curTag
     val shape: LiveData<Shape>
         get() = _shape
+    val tagFamily: LiveData<TagFamily>
+        get() = _tagFamily
 
-    var destination: Int = 10
+    private var destination: Int = 10
+    private var currentTag: Tag = Tag()
 
     // Spots Initialize
     val spots: Array<Spot> =
-        arrayOf(Spot("항공대", 1000), Spot("현택이네", 1001), Spot("혁수네", 1002), Spot("은기네", 1003))
+        arrayOf(Spot("항공대"), Spot("현택이네"), Spot("혁수네"), Spot("은기네"))
 
     // Tag Graph Initialize
     private val tagGraph = TagGraph(tags_1)
 
-    fun onFragmentCreated() {
-        _curTag.value = tagGraph.tagFamily.getOrDefault(1, Tag(1))
+    init {
+        tagFamilyRepository.observeTagFamily(_tagFamily)
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection, renderer: MyRenderer) {
-        if(curTag.value?.id == detection.id) {
+        if(currentTag.id == detection.id) {
             onPreviousTagArrival(detection, renderer)
         }
         else {
@@ -44,7 +50,6 @@ class CameraViewModel : ViewModel() {
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
     private fun onPreviousTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
         _shape.postValue(createShape(direction, renderer, detection.p))
-        println("현재 태그 : ${_curTag.value?.id}")
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
@@ -56,12 +61,12 @@ class CameraViewModel : ViewModel() {
             return
         }
 
-        direction = _curTag.value?.run{
+        currentTag = tagGraph.tagFamily.tagMap[detection.id]?:Tag()
+        direction = currentTag.run{
             this.linkedTags[nextTag.id]?.direction
         }?:Direction.DEFAULT
 
-        _curTag.postValue(tagGraph.tagFamily[detection.id])
-        println("새로운 태그 : ${_curTag.value?.id} / 목적지 : ${nextTag.id} / direction : $direction")
+        println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction")
         if(direction == Direction.DEFAULT) {
             println("direction을 찾지 못했습니다.")
             return
@@ -72,7 +77,6 @@ class CameraViewModel : ViewModel() {
     private fun createShape(direction: Direction, renderer: MyRenderer, drawPos: DoubleArray): Shape {
         return when(direction) {
 
-        //_shape.postValue(Rectangle(renderer, detection.p)) // tag의 결과가 rectangle이라고 치고
             Direction.DEFAULT ->
                 Arrow(renderer, drawPos, direction)
 
@@ -89,5 +93,15 @@ class CameraViewModel : ViewModel() {
                 Arrow(renderer, drawPos, direction)
 
         }
+    }
+
+    private fun postTag(tag: Tag) {
+        viewModelScope.launch {
+            tagFamilyRepository.postTag(tag)
+        }
+    }
+
+    private fun sendInitialQuery() {
+
     }
 }

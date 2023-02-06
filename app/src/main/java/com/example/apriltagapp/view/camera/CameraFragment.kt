@@ -34,11 +34,14 @@ class CameraFragment : Fragment(), DetectionListener{
 
         val glSurfaceView = GLSurfaceView(this.context)
         val surface = glSurfaceView.holder.surface
-        viewModel.onFragmentCreated()
         renderer = MyRenderer(glSurfaceView, this, this)
 
         viewModel.shape.observe(viewLifecycleOwner) {
             it.draw()
+        }
+
+        viewModel.tagFamily.observe(viewLifecycleOwner) {
+                println(it.toString())
         }
 
         return glSurfaceView
