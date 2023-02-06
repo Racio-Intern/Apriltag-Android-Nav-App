@@ -20,7 +20,6 @@ import com.example.apriltagapp.view.camera.MyRenderer
 class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
     external fun stringFromJNI(): String
     lateinit var binding: ActivityMainBinding
-
     companion object {
         const val IMAGE_BUFFER_SIZE = 1
         const val MY_PERMISSIONS_REQUEST_CAMERA = 1;
