@@ -21,7 +21,7 @@ class Line {
             "gl_FragColor = vColor;" +
             "}"
 
-    private val color = arrayOf(0.0f, 0.0f, 1.0f, 1.0f).toFloatArray()
+    private val color = arrayOf(0.0f, 1.0f, 1.0f, 1.0f).toFloatArray()
     private var vertexBuffer: FloatBuffer
     private var mProgram: Int = -1
     private var positionHandle: Int = -1
