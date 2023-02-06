@@ -24,6 +24,7 @@ import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.model.baseModel.BaseShape
 import com.example.apriltagapp.model.baseModel.Drawing
 import com.example.apriltagapp.model.baseShape.Line
+import com.example.apriltagapp.model.baseShape.ThreeDimentionLine
 import com.example.apriltagapp.model.baseShape.Triangle
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -36,9 +37,8 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
     private lateinit var cameraTexture: CameraTexture
     private lateinit var line: Line
     private lateinit var triangle: Triangle
+    private lateinit var threeDimentionLine: ThreeDimentionLine
     private lateinit var surface: Surface
-//    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
-    private var mDetections: ArrayList<ApriltagDetection> = arrayListOf()
     val mPreviewSize: Size = Size(1280, 720)
     var drawList: ArrayList<Drawing> = arrayListOf()
     var state: Boolean = false
@@ -53,6 +53,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
     private var viewMatrix = FloatArray(16)
     private var projectionMatrix = FloatArray(16)
     private var PVM = FloatArray(16)
+
 
     init {
         view.setEGLContextClientVersion(2)
@@ -90,6 +91,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
         cameraTexture = CameraTexture(hTex[0])
         line = Line()
         triangle = Triangle()
+        threeDimentionLine = ThreeDimentionLine()
 
         startBackgroundThread()
         checkCameraPermission()
@@ -119,8 +121,6 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
 
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.scaleM(modelMatrix, 0, draw_height.toFloat(), draw_width.toFloat(), 1.0f)
-        Matrix.multiplyMM(PVM, 0, viewMatrix, 0, modelMatrix, 0)
-        Matrix.multiplyMM(PVM, 0, projectionMatrix, 0, PVM, 0)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -128,24 +128,29 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
         if (updateState) {
+            // M * V * P
+            Matrix.multiplyMM(PVM, 0, viewMatrix, 0, modelMatrix, 0)
+            Matrix.multiplyMM(PVM, 0, projectionMatrix, 0, PVM, 0)
+
+            // M * V * P
             texture.updateTexImage()
             cameraTexture.draw(PVM)
 
             if(state) {
                 for(list in drawList) {
-                    if (list.type == BaseShape.LINE) {
+                    if (list.type == BaseShape.TRIANGLE) {
+                        triangle.draw(list.pos.points, list.pos.nPoints, PVM)
+                    }
+                    else if (list.type == BaseShape.LINE && list.pos.dimension == 2) {
                         line.draw(list.pos.points, list.pos.nPoints, PVM)
                     }
-                    else if (list.type == BaseShape.TRIANGLE) {
-                        triangle.draw(list.pos.points, list.pos.nPoints, PVM)
-                        //println("x  ${list.pos.points[0]}, y : ${list.pos.points[1]}")
+                    else if (list.type == BaseShape.LINE && list.pos.dimension == 3) {
+                        threeDimentionLine.draw(list.pos, PVM)
                     }
                 }
                 state = false
             }
         }
-
-        mDetections.clear()
         updateState = false
     }
 

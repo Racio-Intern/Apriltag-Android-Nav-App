@@ -87,10 +87,10 @@ class Arrow(renderer: MyRenderer, det: DoubleArray, direction: Direction): Shape
         val trianglePoints = FloatArray(6)
         if (direction == Direction.RIGHT) { // right
             trianglePoints[0] = (2.0f * det[2 * 1 + 0] - det[2 * 3 + 0]).toFloat()
-            trianglePoints[1] = (2.0f * det[2 * 1 + 1] - det[2 * 3 + 1]).toFloat()
+            trianglePoints[1] = (2.05f * det[2 * 1 + 1] - det[2 * 3 + 1]).toFloat()
 
             trianglePoints[2] = (2.0f * det[2 * 2 + 0] - det[2 * 0 + 0]).toFloat()
-            trianglePoints[3] = (2.0f * det[2 * 2 + 1] - det[2 * 0 + 1]).toFloat()
+            trianglePoints[3] = (2.05f * det[2 * 2 + 1] - det[2 * 0 + 1]).toFloat()
 
             trianglePoints[4] = ((pointB.x - pointA.x) * 2.0f + pointB.x)
             trianglePoints[5] = ((pointB.y - pointA.y) * 2.0f + pointB.y)
