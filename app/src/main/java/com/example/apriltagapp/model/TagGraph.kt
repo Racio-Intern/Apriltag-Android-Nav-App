@@ -1,8 +1,9 @@
 package com.example.apriltagapp.model
 
-class TagGraph(private val tags: Array<Tag>) {
+class TagGraph(private val tags: ArrayList<Tag>) {
 
-    val tagFamily: Map<Int, Tag> = tags.associateBy { it.id }
+//    val tagFamily: Map<Int, Tag> = tags.associateBy { it.id }
+    val tagFamily: TagFamily = TagFamily(tags)
 
     fun printGraph() {
         for(tag in tags) {
@@ -25,7 +26,7 @@ class TagGraph(private val tags: Array<Tag>) {
 
     /** 다익스트라 알고리즘으로 태그 간의 최단거리를 구합니다. */
     fun shortestPath(start: Int, destination: Int): Tag{
-        return tagFamily[2]?:
+        return tagFamily.tagMap[2]?:
         throw Exception("경로 탐색 결과, 최단 거리가 없습니다.")
     }
 }
