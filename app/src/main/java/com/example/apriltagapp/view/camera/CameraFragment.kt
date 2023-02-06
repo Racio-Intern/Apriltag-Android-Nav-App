@@ -40,8 +40,7 @@ class CameraFragment : Fragment(), DetectionListener{
             it.draw()
         }
 
-        viewModel.tagFamily.observe(viewLifecycleOwner) {
-                println(it.toString())
+        viewModel.tagGraph.observe(viewLifecycleOwner) {
         }
 
         return glSurfaceView

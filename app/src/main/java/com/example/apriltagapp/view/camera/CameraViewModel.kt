@@ -9,6 +9,8 @@ import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.Shape.Arrow
 import com.example.apriltagapp.model.baseModel.Shape
 import com.example.apriltagapp.model.repository.TagFamilyRepository
+import com.example.apriltagapp.utility.NonNullLiveData
+import com.example.apriltagapp.utility.NonNullMutableLiveData
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
@@ -16,12 +18,12 @@ class CameraViewModel : ViewModel() {
     private val _shape = MutableLiveData<Shape>()
     private var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
-    private val _tagFamily = MutableLiveData<TagFamily>(TagFamily((tags_1)))
+    private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
 
     val shape: LiveData<Shape>
         get() = _shape
-    val tagFamily: LiveData<TagFamily>
-        get() = _tagFamily
+    val tagGraph: NonNullLiveData<TagGraph>
+        get() = _tagGraph
 
     private var destination: Int = 10
     private var currentTag: Tag = Tag()
@@ -30,11 +32,8 @@ class CameraViewModel : ViewModel() {
     val spots: Array<Spot> =
         arrayOf(Spot("항공대"), Spot("현택이네"), Spot("혁수네"), Spot("은기네"))
 
-    // Tag Graph Initialize
-    private val tagGraph = TagGraph(tags_1)
-
     init {
-        tagFamilyRepository.observeTagFamily(_tagFamily)
+        tagFamilyRepository.observeTagFamily(_tagGraph)
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
@@ -55,18 +54,18 @@ class CameraViewModel : ViewModel() {
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
         val nextTag = try {
-            tagGraph.shortestPath(detection.id, destination)
+            _tagGraph.value.shortestPath(detection.id, destination)
         }catch(e: Exception) {
             // shortest Path 검색 결과가 없을 때
             return
         }
 
-        currentTag = tagGraph.tagFamily.tagMap[detection.id]?:Tag()
+        currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:Tag()
         direction = currentTag.run{
             this.linkedTags[nextTag.id]?.direction
         }?:Direction.DEFAULT
 
-        println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction")
+        println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
         if(direction == Direction.DEFAULT) {
             println("direction을 찾지 못했습니다.")
             return
