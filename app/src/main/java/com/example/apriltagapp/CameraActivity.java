@@ -22,15 +22,18 @@ import java.util.List;
 
 import static android.Manifest.permission.CAMERA;
 
+import com.example.apriltagapp.listener.TagDetectionListener;
+import com.example.apriltagapp.view.ApriltagCamera2View;
+
 
 public class CameraActivity extends AppCompatActivity
-        implements CameraBridgeViewBase.CvCameraViewListener2 {
+        implements CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
 
     private static final String TAG = "opencv";
     private Mat matInput;
     private Mat matResult;
 
-    private CameraBridgeViewBase mOpenCvCameraView;
+    private ApriltagCamera2View mOpenCvCameraView;
 
     public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
 
@@ -70,7 +73,8 @@ public class CameraActivity extends AppCompatActivity
 
         setContentView(R.layout.activity_camera);
 
-        mOpenCvCameraView = (CameraBridgeViewBase)findViewById(R.id.activity_surface_view);
+        mOpenCvCameraView = (ApriltagCamera2View)findViewById(R.id.activity_surface_view);
+        mOpenCvCameraView.setOnListener(this);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setCameraIndex(0); // front-camera(1),  back-camera(0)
@@ -201,4 +205,8 @@ public class CameraActivity extends AppCompatActivity
     }
 
 
+    @Override
+    public void onTagDetect() {
+        Log.d("log", "듣는중 듣는중 듣는중");
+    }
 }
