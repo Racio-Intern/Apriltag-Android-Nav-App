@@ -3,11 +3,30 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.18.1)
+cmake_minimum_required(VERSION 3.4.1)
+
+project("apriltagapp")
+
+set(pathPROJECT /Users/hhtboy/Documents/GitHub/Apriltag-Android-Nav-App) # 수정필요
+set(pathOPENCV ${pathPROJECT}/sdk)
+set(pathLIBOPENCV_JAVA ${pathOPENCV}/native/libs/${ANDROID_ABI}/libopencv_java4.so)
+
+set(CMAKE_VERBOSE_MAKEFILE on)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+
+include_directories(${pathOPENCV}/native/jni/include)
+
+add_library( # Sets the name of the library.
+        native-lib
+        SHARED
+        ${pathPROJECT}/app/src/main/cpp/native-lib.cpp)
+
+add_library(lib_opencv SHARED IMPORTED)
+set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${pathLIBOPENCV_JAVA})
+
 
 # Declares and names the project.
 
-project("apriltagapp")
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -56,6 +75,7 @@ add_library( # Sets the name of the library.
         apriltag/tagStandard52h13.c
         native-lib.c)
 
+
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -76,8 +96,15 @@ find_library(jnigraphics-lib jnigraphics)
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
+        native-lib
+        lib_opencv
+        ${log-lib}
+        )
+target_link_libraries(
         apriltag
+        ${jnigraphics-lib}
+        ${log-lib}
+)
 
-        # Links the target library to the log library
-        # included in the NDK.
-        ${log-lib} ${jnigraphics-lib})
+# Links the target library to the log library
+# included in the NDK.

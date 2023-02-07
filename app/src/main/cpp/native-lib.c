@@ -77,8 +77,8 @@ Java_com_example_apriltagapp_ApriltagNative_native_1init(
         !state.ad_hamming_field ||
         !state.ad_c_field ||
         !state.ad_p_field) {
-        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
-                            "couldn't find ApriltagDetection fields");
+//        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
+//                            "couldn't find ApriltagDetection fields");
         return;
     }
 }
