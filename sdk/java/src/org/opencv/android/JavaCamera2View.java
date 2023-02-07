@@ -1,6 +1,7 @@
 package org.opencv.android;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,6 +29,10 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import apriltag.ApriltagDetection;
+import apriltag.ApriltagNative;
+
+
 /**
  * This class is an implementation of the Bridge View between OpenCV and Java Camera.
  * This class relays on the functionality available in base class and only implements
@@ -42,6 +47,8 @@ import org.opencv.imgproc.Imgproc;
 public class JavaCamera2View extends CameraBridgeViewBase {
 
     private static final String LOGTAG = "JavaCamera2View";
+
+    private ArrayList<ApriltagDetection> mDetections;
 
     protected ImageReader mImageReader;
     protected int mPreviewFormat = ImageFormat.YUV_420_888;
@@ -118,7 +125,7 @@ public class JavaCamera2View extends CameraBridgeViewBase {
                     mCameraID = camList[mCameraIndex];
                     manager.openCamera(mCameraID, mStateCallback, mBackgroundHandler);
                 } else {
-                    // CAMERA_DISCONNECTED is used when the camera id is no longer valid
+                    //                    // CAMERA_DISCONNECTED is used when the caera id is no longer valid
                     throw new CameraAccessException(CameraAccessException.CAMERA_DISCONNECTED);
                 }
             }
@@ -178,11 +185,25 @@ public class JavaCamera2View extends CameraBridgeViewBase {
                     if (image == null)
                         return;
 
-                    // sanity checks - 3 planes
                     Image.Plane[] planes = image.getPlanes();
                     assert (planes.length == 3);
                     assert (image.getFormat() == mPreviewFormat);
 
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    byte[] bytes = new byte[buffer.remaining()];
+                    buffer.get(bytes);
+                    buffer.clear();
+
+                    Log.d(LOGTAG, "bytes: " + bytes.length);
+                    Log.i(LOGTAG, "mPreWidth " + mPreviewSize.getWidth() + " mPreHeight: " + mPreviewSize.getHeight());
+                    mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
+
+                    if (!mDetections.isEmpty()) {
+                        Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
+                    }
+                    else{
+                        Log.i(LOGTAG, "detection empty!");
+                    }
                     JavaCamera2Frame tempFrame = new JavaCamera2Frame(image);
                     deliverAndDrawFrame(tempFrame);
                     tempFrame.release();

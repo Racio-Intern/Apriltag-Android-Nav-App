@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static android.Manifest.permission.CAMERA;
+import static apriltag.ApriltagNative.apriltag_init_new;
+import static apriltag.ApriltagNative.native_init_new;
 
 
 public class CameraActivity extends AppCompatActivity
@@ -33,11 +35,11 @@ public class CameraActivity extends AppCompatActivity
     private CameraBridgeViewBase mOpenCvCameraView;
 
     public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
-
-
+    public native void DrawRectangle(long matAddrInput, long matAddrResult);
     static {
         System.loadLibrary("opencv_java4");
         System.loadLibrary("native-lib");
+        System.loadLibrary("apriltag");
     }
 
 
@@ -69,6 +71,9 @@ public class CameraActivity extends AppCompatActivity
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_camera);
+
+        native_init_new();
+        apriltag_init_new("tagStandard41h12", 2, 4.0, 0.0, 1);
 
         mOpenCvCameraView = (CameraBridgeViewBase)findViewById(R.id.activity_surface_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
@@ -126,6 +131,7 @@ public class CameraActivity extends AppCompatActivity
             matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
 
         ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+        DrawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
 
         return matResult;
     }
