@@ -1,6 +1,6 @@
 package com.example.apriltagapp;
 
-public class ApriltagDetection {
+public class ApriltagDetection1 {
     // The decoded ID of the tag
     public int id;
 

@@ -3,18 +3,14 @@ package com.example.apriltagapp
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
-import com.example.apriltagapp.ApriltagNative.*
+import com.example.apriltagapp.ApriltagNative2.*
 import com.example.apriltagapp.databinding.ActivityMainBinding
-import com.example.apriltagapp.model.Spot
-import com.example.apriltagapp.model.TagGraph
-import com.example.apriltagapp.model.tags_1
 import com.example.apriltagapp.view.camera.MyRenderer
 
 class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
@@ -41,9 +37,6 @@ class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
 
         native_init()
         apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
-
-
-
     }
 
     override fun onSupportNavigateUp(): Boolean {

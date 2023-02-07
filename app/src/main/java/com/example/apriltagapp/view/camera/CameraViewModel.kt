@@ -4,16 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.apriltagapp.ApriltagDetection
+import com.example.apriltagapp.ApriltagDetection1
 import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.Shape.Arrow
-import com.example.apriltagapp.model.Shape.ThreeDimentionRectangle
 import com.example.apriltagapp.model.baseModel.Shape
-import com.example.apriltagapp.model.baseShape.ThreeDimentionLine
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
-import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
@@ -39,7 +36,7 @@ class CameraViewModel : ViewModel() {
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
-    fun onDetect(detection: ApriltagDetection, renderer: MyRenderer) {
+    fun onDetect(detection: ApriltagDetection1, renderer: MyRenderer) {
         if(currentTag.id == detection.id) {
             onPreviousTagArrival(detection, renderer)
         }
@@ -49,12 +46,12 @@ class CameraViewModel : ViewModel() {
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
-    private fun onPreviousTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
+    private fun onPreviousTagArrival(detection: ApriltagDetection1, renderer: MyRenderer) {
         _shape.postValue(createShape(direction, renderer, detection.p))
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
-    private fun onNewTagArrival(detection: ApriltagDetection, renderer: MyRenderer) {
+    private fun onNewTagArrival(detection: ApriltagDetection1, renderer: MyRenderer) {
         val nextTag = try {
             _tagGraph.value.shortestPath(detection.id, destination)
         }catch(e: Exception) {

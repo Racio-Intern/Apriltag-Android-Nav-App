@@ -1,8 +1,7 @@
 package com.example.apriltagapp.listener
 
-import com.example.apriltagapp.ApriltagDetection
-import com.example.apriltagapp.model.baseModel.Pos
+import com.example.apriltagapp.ApriltagDetection1
 
 interface DetectionListener {
-    fun onTagDetection(detection: ApriltagDetection)
+    fun onTagDetection(detection: ApriltagDetection1)
 }
