@@ -28,10 +28,16 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import apriltag.ApriltagDetection;
+import apriltag.ApriltagNative;
+
 public class ApriltagCamera2View extends CameraBridgeViewBase {
+
+    private ArrayList<ApriltagDetection> mDetections;
 
     private static final String LOGTAG = "JavaCamera2View";
 
@@ -179,6 +185,21 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
                     Image.Plane[] planes = image.getPlanes();
                     assert (planes.length == 3);
                     assert (image.getFormat() == mPreviewFormat);
+
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    byte[] bytes = new byte[buffer.remaining()];
+                    buffer.get(bytes);
+                    buffer.clear();
+
+                    mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
+
+                    if (!mDetections.isEmpty()) {
+                        Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
+                    }
+                    else{
+                        Log.i(LOGTAG, "detection empty!");
+                    }
+
 
                     ApriltagCamera2View.JavaCamera2Frame tempFrame = new ApriltagCamera2View.JavaCamera2Frame(image);
                     deliverAndDrawFrame(tempFrame);

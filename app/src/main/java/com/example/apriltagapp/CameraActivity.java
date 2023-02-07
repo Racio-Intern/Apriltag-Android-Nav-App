@@ -78,7 +78,6 @@ public class CameraActivity extends AppCompatActivity
         native_init_new();
         apriltag_init_new("tagStandard41h12", 2, 4.0, 0.0, 1);
 
-        mOpenCvCameraView = (CameraBridgeViewBase)findViewById(R.id.activity_surface_view);
         mOpenCvCameraView = (ApriltagCamera2View)findViewById(R.id.activity_surface_view);
         mOpenCvCameraView.setOnListener(this);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
@@ -136,7 +135,7 @@ public class CameraActivity extends AppCompatActivity
             matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
 
         ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-        DrawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+        //DrawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
 
         return matResult;
     }
