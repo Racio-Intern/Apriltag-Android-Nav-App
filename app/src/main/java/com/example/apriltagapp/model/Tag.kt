@@ -11,7 +11,7 @@ data class Tag(
 
     fun addSpot(spot: Spot) {
         spots.add(spot)
-    }
+    }//
 
     override fun equals(other: Any?): Boolean {
         return if (other is Tag) {

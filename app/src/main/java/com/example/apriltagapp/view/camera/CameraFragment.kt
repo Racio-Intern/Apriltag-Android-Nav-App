@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
-import com.example.apriltagapp.ApriltagDetection
+import com.example.apriltagapp.ApriltagDetection1
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.DetectionListener
 
@@ -80,7 +80,7 @@ class CameraFragment : Fragment(), DetectionListener{
         renderer.onDestroy()
     }
 
-    override fun onTagDetection(detection: ApriltagDetection){
+    override fun onTagDetection(detection: ApriltagDetection1){
         viewModel.onDetect(detection, renderer)
     }
 

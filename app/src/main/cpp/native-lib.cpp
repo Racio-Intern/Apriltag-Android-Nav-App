@@ -13,3 +13,15 @@ Java_com_example_apriltagapp_CameraActivity_ConvertRGBtoGray(JNIEnv *env, jobjec
 
     cvtColor(matInput, matResult, COLOR_RGBA2GRAY);
 }
+
+// 미래에 개선할 것
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_CameraActivity_DrawRectangle(JNIEnv *env, jobject thiz,
+                                                             jlong mat_addr_input,
+                                                             jlong mat_addr_result) {
+    Mat &matInput = *(Mat *)mat_addr_input;
+    Mat &matResult = *(Mat *)mat_addr_result;
+
+    cvtColor(matInput, matResult, COLOR_RGBA2GRAY);
+}

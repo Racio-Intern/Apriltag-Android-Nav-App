@@ -33,7 +33,7 @@ Java_com_example_apriltagapp_MainActivity_stringFromJNI(
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative_native_1init(
+Java_apriltag_ApriltagNative_native_1init_1new(
         JNIEnv *env, jclass cls){
     // Just do method lookups once and cache the results
 
@@ -54,7 +54,7 @@ Java_com_example_apriltagapp_ApriltagNative_native_1init(
         return;
     }
     // Get ApriltagDetection methods
-    jclass ad_cls = (*env)->FindClass(env, "com/example/apriltagapp/ApriltagDetection");
+    jclass ad_cls = (*env)->FindClass(env, "apriltag/ApriltagDetection");
     if (!ad_cls) {
         __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
                             "couldn't find ApriltagDetection class");
@@ -89,7 +89,7 @@ Java_com_example_apriltagapp_ApriltagNative_native_1init(
  * Signature: ([BIILandroid/graphics/Bitmap;)V
  */
 JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative_yuv_1to_1rgb(
+Java_apriltag_ApriltagNative_yuv_1to_1rgb(
         JNIEnv *env, jclass cls, jbyteArray _src, jint width, jint height, jobject _dst){
     // NV21 Format
     // width*height    luma (Y) bytes followed by
@@ -155,7 +155,7 @@ Java_com_example_apriltagapp_ApriltagNative_yuv_1to_1rgb(
  * Signature: (Ljava/lang/String;IDDI)V
  */
 JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative_apriltag_1init(
+Java_apriltag_ApriltagNative_apriltag_1init_1new(
         JNIEnv *env, jclass cls, jstring _tfname, jint errorbits, jdouble decimate,
         jdouble sigma, jint nthreads) {
     // Do cleanup in case we're already initialized
@@ -213,7 +213,7 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1init(
  * Signature: ([BII)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL
-Java_com_example_apriltagapp_ApriltagNative_apriltag_1detect_1yuv(
+Java_apriltag_ApriltagNative_apriltag_1detect_1yuv_1new(
         JNIEnv *env, jclass cls, jbyteArray _buf, jint width, jint height){
     // If not initialized, init with default settings
     if (!state.td) {
@@ -268,4 +268,30 @@ Java_com_example_apriltagapp_ApriltagNative_apriltag_1detect_1yuv(
     apriltag_detections_destroy(detections);
 
     return al;
+}
+
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_ApriltagNative2_native_1init(JNIEnv *env, jclass clazz) {
+    // TODO: implement native_init()
+}
+
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_ApriltagNative2_yuv_1to_1rgb(JNIEnv *env, jclass clazz, jbyteArray src,
+                                                          jint width, jint height, jobject dst) {
+    // TODO: implement yuv_to_rgb()
+}
+
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_ApriltagNative2_apriltag_1init(JNIEnv *env, jclass clazz,
+                                                            jstring tag_family, jint error_bits,
+                                                            jdouble decimate_factor,
+                                                            jdouble blur_sigma, jint nthreads) {
+    // TODO: implement apriltag_init()
+}
+
+JNIEXPORT jobject JNICALL
+Java_com_example_apriltagapp_ApriltagNative2_apriltag_1detect_1yuv(JNIEnv *env, jclass clazz,
+                                                                   jbyteArray src, jint width,
+                                                                   jint height) {
+    // TODO: implement apriltag_detect_yuv()
 }
