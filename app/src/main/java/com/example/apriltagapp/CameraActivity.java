@@ -24,15 +24,18 @@ import static android.Manifest.permission.CAMERA;
 import static apriltag.ApriltagNative.apriltag_init_new;
 import static apriltag.ApriltagNative.native_init_new;
 
+import com.example.apriltagapp.listener.TagDetectionListener;
+import com.example.apriltagapp.view.ApriltagCamera2View;
+
 
 public class CameraActivity extends AppCompatActivity
-        implements CameraBridgeViewBase.CvCameraViewListener2 {
+        implements CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
 
     private static final String TAG = "opencv";
     private Mat matInput;
     private Mat matResult;
 
-    private CameraBridgeViewBase mOpenCvCameraView;
+    private ApriltagCamera2View mOpenCvCameraView;
 
     public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
     public native void DrawRectangle(long matAddrInput, long matAddrResult);
@@ -76,6 +79,8 @@ public class CameraActivity extends AppCompatActivity
         apriltag_init_new("tagStandard41h12", 2, 4.0, 0.0, 1);
 
         mOpenCvCameraView = (CameraBridgeViewBase)findViewById(R.id.activity_surface_view);
+        mOpenCvCameraView = (ApriltagCamera2View)findViewById(R.id.activity_surface_view);
+        mOpenCvCameraView.setOnListener(this);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setCameraIndex(0); // front-camera(1),  back-camera(0)
@@ -207,4 +212,8 @@ public class CameraActivity extends AppCompatActivity
     }
 
 
+    @Override
+    public void onTagDetect() {
+        Log.d("log", "듣는중 듣는중 듣는중");
+    }
 }

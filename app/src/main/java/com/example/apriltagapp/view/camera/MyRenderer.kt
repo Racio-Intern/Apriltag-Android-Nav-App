@@ -217,6 +217,7 @@ class MyRenderer(val view: GLSurfaceView, val fragment: CameraFragment, val dete
             val image = reader.acquireNextImage()
             val buffer = image.planes[0].buffer
             val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+            println(bytes.size)
             buffer.clear()
 
             val mDetections = ApriltagNative2.apriltag_detect_yuv(bytes, mPreviewSize.width, mPreviewSize.height)
