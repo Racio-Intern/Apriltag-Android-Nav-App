@@ -5,9 +5,9 @@ using namespace cv;
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_CameraActivity_ConvertRGBtoGray(JNIEnv *env, jobject thiz,
-                                                             jlong mat_addr_input,
-                                                             jlong mat_addr_result) {
+Java_com_example_apriltagapp_view_camera_CameraFragment_ConvertRGBtoGray(JNIEnv *env, jobject thiz,
+                                                                         jlong mat_addr_input,
+                                                                         jlong mat_addr_result) {
     Mat &matInput = *(Mat *)mat_addr_input;
     Mat &matResult = *(Mat *)mat_addr_result;
 
@@ -17,14 +17,14 @@ Java_com_example_apriltagapp_CameraActivity_ConvertRGBtoGray(JNIEnv *env, jobjec
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_CameraActivity_DrawRectangle(JNIEnv *env, jobject thiz,
-                                                             jlong mat_addr_input,
-                                                             jdoubleArray arr) {
+Java_com_example_apriltagapp_view_camera_CameraFragment_DrawRectangle(JNIEnv *env, jobject thiz,
+                                                                      jlong mat_addr_input,
+                                                                      jdoubleArray arr) {
     Mat &matInput = *(Mat *)mat_addr_input;
 
     jdouble* arr2 = (*env).GetDoubleArrayElements( arr, NULL);
     Point_ <int> pts1[4] = {Point((int)arr2[0], (int)arr2[1]), Point((int)arr2[2], (int)arr2[3]),
-                      Point((int)arr2[4], (int)arr2[5]), Point((int)arr2[6], (int)arr2[7])};
+                            Point((int)arr2[4], (int)arr2[5]), Point((int)arr2[6], (int)arr2[7])};
 
     const Point* pts = pts1;
     int npts = 4;

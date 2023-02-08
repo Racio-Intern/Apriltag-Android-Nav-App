@@ -4,23 +4,18 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.apriltagapp.ApriltagDetection1
+import apriltag.ApriltagDetection
 import com.example.apriltagapp.model.*
-import com.example.apriltagapp.model.Shape.Arrow
-import com.example.apriltagapp.model.baseModel.Shape
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
-    private val _shape = MutableLiveData<Shape>()
     private var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
     private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
 
-    val shape: LiveData<Shape>
-        get() = _shape
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
 
@@ -36,22 +31,19 @@ class CameraViewModel : ViewModel() {
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
-    fun onDetect(detection: ApriltagDetection1, renderer: MyRenderer) {
+    fun onDetect(detection: ApriltagDetection) {
         if(currentTag.id == detection.id) {
-            onPreviousTagArrival(detection, renderer)
         }
         else {
-            onNewTagArrival(detection, renderer)
         }
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
-    private fun onPreviousTagArrival(detection: ApriltagDetection1, renderer: MyRenderer) {
-        _shape.postValue(createShape(direction, renderer, detection.p))
+    private fun onPreviousTagArrival() {
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
-    private fun onNewTagArrival(detection: ApriltagDetection1, renderer: MyRenderer) {
+    private fun onNewTagArrival(detection: ApriltagDetection) {
         val nextTag = try {
             _tagGraph.value.shortestPath(detection.id, destination)
         }catch(e: Exception) {
@@ -69,28 +61,9 @@ class CameraViewModel : ViewModel() {
             println("direction을 찾지 못했습니다.")
             return
         }
-        _shape.postValue(createShape(direction, renderer, detection.p))
     }
 
-    private fun createShape(direction: Direction, renderer: MyRenderer, drawPos: DoubleArray): Shape {
-        return when(direction) {
-
-            Direction.DEFAULT ->
-                Arrow(renderer, drawPos, direction)
-
-            Direction.LEFT ->
-                Arrow(renderer, drawPos, direction)
-
-            Direction.RIGHT ->
-                Arrow(renderer, drawPos, direction)
-
-            Direction.BACKWARDS ->
-                Arrow(renderer, drawPos, direction)
-
-            Direction.STRAIT ->
-                Arrow(renderer, drawPos, direction)
-
-        }
+    private fun createShape() {
     }
 
     private fun postTag(tag: Tag) {

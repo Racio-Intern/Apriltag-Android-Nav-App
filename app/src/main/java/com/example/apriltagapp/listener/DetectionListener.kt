@@ -1,7 +1,7 @@
 package com.example.apriltagapp.listener
 
-import com.example.apriltagapp.ApriltagDetection1
+import apriltag.ApriltagDetection
 
 interface DetectionListener {
-    fun onTagDetection(detection: ApriltagDetection1)
+    fun onTagDetection(detection: ApriltagDetection)
 }
