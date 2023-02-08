@@ -11,9 +11,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -66,7 +68,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         float hw = this.getWidth() / 2.0f;
         float hh = this.getHeight() / 2.0f;
 
-        float cw  = (float)Resources.getSystem().getDisplayMetrics().widthPixels; //Make sure to import Resources package
+        float cw  = (float) Resources.getSystem().getDisplayMetrics().widthPixels; //Make sure to import Resources package
         float ch  = (float)Resources.getSystem().getDisplayMetrics().heightPixels;
 
         float scale = cw / (float)mh;
@@ -473,6 +475,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
             Canvas canvas = getHolder().lockCanvas();
             if (canvas != null) {
                 canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+                int saveCount = canvas.save();
+                canvas.setMatrix(mMatrix);
                 if (BuildConfig.DEBUG)
                     Log.d(TAG, "mStretch value: " + mScale);
 

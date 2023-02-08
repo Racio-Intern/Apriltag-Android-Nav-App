@@ -29,9 +29,6 @@ class MainActivity : AppCompatActivity() {
             System.loadLibrary("native-lib")
             System.loadLibrary("apriltag")
         }
-
-        external fun convertRGBtoGray(matAddrInput: Long, matAddrResult: Long)
-        external fun drawRectangle(matAddrInput: Long, matAddrResult: Long)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.SurfaceView
 import android.view.View
@@ -15,10 +14,9 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-
 import apriltag.ApriltagDetection
-import com.example.apriltagapp.MainActivity
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.DetectionListener
@@ -35,11 +33,16 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     DetectionListener, CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
     var binding: FragmentCameraBinding? = null
 
+    private var detArray: DoubleArray? = null
+    private var state = false
+
     private var mOpenCvCameraView: ApriltagCamera2View? = null
 
     private val TAG = "opencv"
     private lateinit var matInput: Mat
-    private var matResult: Mat? = null
+
+    external fun ConvertRGBtoGray(matAddrInput: Long, matAddrResult: Long)
+    external fun DrawRectangle(matAddrInput: Long, arr: DoubleArray?)
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
         override fun onManagerConnected(status: Int) {
@@ -99,10 +102,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 //        viewModel.onDetect(detection, renderer)
     }
 
-    override fun onTagDetect() {
-
-    }
-
     override fun onCameraViewStarted(width: Int, height: Int) {
     }
 
@@ -112,17 +111,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
         matInput = inputFrame!!.rgba()
 
-        matResult?.let { mat ->
-            MainActivity.convertRGBtoGray(matInput.nativeObjAddr, mat.nativeObjAddr)
-            return mat
+         if (state) {
+            DrawRectangle(matInput.nativeObjAddr, detArray)
+            state = false
         }
-        val mat = Mat(matInput.rows(), matInput.cols(), matInput.type())
-        MainActivity.convertRGBtoGray(matInput.nativeObjAddr, mat.nativeObjAddr)
-
-        matResult = mat
-        //drawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-        //drawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-        return mat
+        return matInput
     }
 
 
@@ -199,4 +192,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         builder.create().show()
 
     }
+
+    override fun onTagDetect(arr: DoubleArray) {
+        detArray = arr
+        state = true
+    }
+
 }

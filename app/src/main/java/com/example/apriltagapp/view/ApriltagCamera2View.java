@@ -173,40 +173,37 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
             }
 
             mImageReader = ImageReader.newInstance(w, h, mPreviewFormat, 2);
-            mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    Image image = reader.acquireLatestImage();
-                    if (image == null)
-                        return;
+            mImageReader.setOnImageAvailableListener(reader -> {
+                Image image = reader.acquireLatestImage();
+                if (image == null)
+                    return;
 
-                    // sanity checks - 3 planes
-                    Image.Plane[] planes = image.getPlanes();
-                    assert (planes.length == 3);
-                    assert (image.getFormat() == mPreviewFormat);
+                // sanity checks - 3 planes
+                Image.Plane[] planes = image.getPlanes();
+                assert (planes.length == 3);
+                assert (image.getFormat() == mPreviewFormat);
 
-                    ByteBuffer buffer = planes[0].getBuffer();
-                    byte[] bytes = new byte[buffer.remaining()];
-                    buffer.get(bytes);
-                    buffer.clear();
+                ByteBuffer buffer = planes[0].getBuffer();
+                byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
+                buffer.clear();
 
-                    mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
+                mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
 
-                    if (!mDetections.isEmpty()) {
-                        double[] arr = mDetections.get(0).p;
-                        Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
-                        listener.onTagDetect(arr);
-                    }
-                    else{
-                        Log.i(LOGTAG, "detection empty!");
-                    }
-
-
-                    ApriltagCamera2View.JavaCamera2Frame tempFrame = new ApriltagCamera2View.JavaCamera2Frame(image);
-                    deliverAndDrawFrame(tempFrame);
-                    tempFrame.release();
-                    image.close();
+                if (!mDetections.isEmpty()) {
+                    double[] arr = mDetections.get(0).p;
+                    Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
+                    listener.onTagDetect(arr);
                 }
+                else{
+                    Log.i(LOGTAG, "detection empty!");
+                }
+
+
+                JavaCamera2Frame tempFrame = new JavaCamera2Frame(image);
+                deliverAndDrawFrame(tempFrame);
+                tempFrame.release();
+                image.close();
             }, mBackgroundHandler);
             Surface surface = mImageReader.getSurface();
 
