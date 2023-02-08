@@ -176,7 +176,6 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
             mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    listener.onTagDetect();
                     Image image = reader.acquireLatestImage();
                     if (image == null)
                         return;
@@ -194,7 +193,9 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
                     mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
 
                     if (!mDetections.isEmpty()) {
+                        double[] arr = mDetections.get(0).p;
                         Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
+                        listener.onTagDetect(arr);
                     }
                     else{
                         Log.i(LOGTAG, "detection empty!");

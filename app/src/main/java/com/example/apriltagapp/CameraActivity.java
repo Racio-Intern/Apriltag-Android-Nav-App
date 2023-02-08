@@ -2,7 +2,6 @@ package com.example.apriltagapp;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.navigation.NavController;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -25,7 +24,6 @@ import static android.Manifest.permission.CAMERA;
 import static apriltag.ApriltagNative.apriltag_init_new;
 import static apriltag.ApriltagNative.native_init_new;
 
-import com.example.apriltagapp.databinding.ActivityMainBinding;
 import com.example.apriltagapp.listener.TagDetectionListener;
 import com.example.apriltagapp.view.ApriltagCamera2View;
 
@@ -33,7 +31,8 @@ import com.example.apriltagapp.view.ApriltagCamera2View;
 public class CameraActivity extends AppCompatActivity
         implements CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
 
-
+    private double[] detArray;
+    private boolean state = false;
     private static final String TAG = "opencv";
     private Mat matInput;
     private Mat matResult;
@@ -41,7 +40,7 @@ public class CameraActivity extends AppCompatActivity
     private ApriltagCamera2View mOpenCvCameraView;
 
     public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
-    public native void DrawRectangle(long matAddrInput, long matAddrResult);
+    public native void DrawRectangle(long matAddrInput, double[] arr);
     static {
         System.loadLibrary("opencv_java4");
         System.loadLibrary("native-lib");
@@ -132,15 +131,18 @@ public class CameraActivity extends AppCompatActivity
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         matInput = inputFrame.rgba();
-
-        if ( matResult == null )
-
+        /*
+        if ( matResult == null ){
             matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
-
+        }
         ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-        //DrawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+         */
+        if (state){
+            DrawRectangle(matInput.getNativeObjAddr(), detArray);
+            state = false;
+        }
 
-        return matResult;
+        return matInput;
     }
 
 
@@ -215,7 +217,9 @@ public class CameraActivity extends AppCompatActivity
 
 
     @Override
-    public void onTagDetect() {
+    public void onTagDetect(double[] arr) {
+        detArray = arr;
+        state = true;
         Log.d("log", "듣는중 듣는중 듣는중");
     }
 }
