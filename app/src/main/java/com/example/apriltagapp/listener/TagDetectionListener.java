@@ -1,6 +1,6 @@
 package com.example.apriltagapp.listener;
 
 public interface TagDetectionListener {
-    void onTagDetect();
+    void onTagDetect(double[] arr);
 
 }
