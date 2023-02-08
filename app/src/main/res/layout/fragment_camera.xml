@@ -5,10 +5,8 @@
     android:layout_height="match_parent"
     tools:context=".view.camera.CameraFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <com.example.apriltagapp.view.ApriltagCamera2View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="camera" />
-
+        android:id="@+id/activity_surface_view" />
 </androidx.constraintlayout.widget.ConstraintLayout>
