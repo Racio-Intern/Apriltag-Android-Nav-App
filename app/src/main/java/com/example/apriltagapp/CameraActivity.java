@@ -2,6 +2,7 @@ package com.example.apriltagapp;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.navigation.NavController;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -24,12 +25,14 @@ import static android.Manifest.permission.CAMERA;
 import static apriltag.ApriltagNative.apriltag_init_new;
 import static apriltag.ApriltagNative.native_init_new;
 
+import com.example.apriltagapp.databinding.ActivityMainBinding;
 import com.example.apriltagapp.listener.TagDetectionListener;
 import com.example.apriltagapp.view.ApriltagCamera2View;
 
 
 public class CameraActivity extends AppCompatActivity
         implements CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
+
 
     private static final String TAG = "opencv";
     private Mat matInput;

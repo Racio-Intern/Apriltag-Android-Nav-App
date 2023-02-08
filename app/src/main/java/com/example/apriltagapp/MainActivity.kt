@@ -1,28 +1,37 @@
 package com.example.apriltagapp
 
+
 import android.Manifest
+import android.annotation.TargetApi
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+
+import android.view.WindowManager
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
-import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
-import com.example.apriltagapp.ApriltagNative2.*
+import apriltag.ApriltagNative
 import com.example.apriltagapp.databinding.ActivityMainBinding
-import com.example.apriltagapp.view.camera.MyRenderer
+import com.example.apriltagapp.view.ApriltagCamera2View
+import org.opencv.android.CameraBridgeViewBase
 
-class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
-    external fun stringFromJNI(): String
+
+class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
-    companion object {
-        const val IMAGE_BUFFER_SIZE = 1
-        const val MY_PERMISSIONS_REQUEST_CAMERA = 1;
 
+
+    companion object {
         init {
+            System.loadLibrary("opencv_java4")
+            System.loadLibrary("native-lib")
             System.loadLibrary("apriltag")
         }
+
+        external fun convertRGBtoGray(matAddrInput: Long, matAddrResult: Long)
+        external fun drawRectangle(matAddrInput: Long, matAddrResult: Long)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,12 +40,19 @@ class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
         val navController = binding.frgNav.getFragment<NavHostFragment>().navController
         setupActionBarWithNavController(navController)
 
-        requestCameraPermission()
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
+
+        ApriltagNative.native_init_new()
+        ApriltagNative.apriltag_init_new("tagStandard41h12", 2, 4.0, 0.0, 1)
 
         setContentView(binding.root)
-
-        native_init()
-        apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -44,20 +60,6 @@ class MainActivity : AppCompatActivity(), OnRequestPermissionsResultCallback{
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 
-    private fun requestCameraPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            println("카메라 권한 필요")
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA),
-                MyRenderer.MY_PERMISSIONS_REQUEST_CAMERA
-            )
-        }
-    }
 }
 
 

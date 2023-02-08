@@ -1,88 +1,202 @@
 package com.example.apriltagapp.view.camera
 
+
 import android.Manifest
+import android.annotation.TargetApi
 import android.content.pm.PackageManager
-import android.opengl.GLSurfaceView
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.viewModels
-import com.example.apriltagapp.ApriltagDetection1
+import androidx.navigation.fragment.findNavController
+
+import apriltag.ApriltagDetection
+import com.example.apriltagapp.MainActivity
+import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.DetectionListener
+import com.example.apriltagapp.listener.TagDetectionListener
+import com.example.apriltagapp.view.ApriltagCamera2View
+import org.opencv.android.BaseLoaderCallback
+import org.opencv.android.CameraBridgeViewBase
+import org.opencv.android.LoaderCallbackInterface
+import org.opencv.android.OpenCVLoader
+import org.opencv.core.Mat
 
 
-class CameraFragment : Fragment(), DetectionListener{
+class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
+    DetectionListener, CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
     var binding: FragmentCameraBinding? = null
-    lateinit var renderer: MyRenderer
-    val viewModel: CameraViewModel by viewModels()
 
+    private var mOpenCvCameraView: ApriltagCamera2View? = null
+
+    private val TAG = "opencv"
+    private lateinit var matInput: Mat
+    private var matResult: Mat? = null
+
+    private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
+        override fun onManagerConnected(status: Int) {
+            when (status) {
+                SUCCESS -> {
+                    mOpenCvCameraView?.enableView()
+                }
+                else -> {
+                    super.onManagerConnected(status)
+                }
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
-        checkCameraPermission()
-
         binding = FragmentCameraBinding.inflate(inflater)
-        // Inflate the layout for this fragment
 
-        val glSurfaceView = GLSurfaceView(this.context)
-        val surface = glSurfaceView.holder.surface
-        renderer = MyRenderer(glSurfaceView, this, this)
-
-        viewModel.shape.observe(viewLifecycleOwner) {
-            it.draw()
+        mOpenCvCameraView = binding?.activitySurfaceView?.apply {
+            this.setOnListener(this@CameraFragment)
+            this.visibility = SurfaceView.VISIBLE
+            this.setCvCameraViewListener(this@CameraFragment)
+            this.setCameraIndex(0) // front-camera(1),  back-camera(0)
         }
 
-        viewModel.tagGraph.observe(viewLifecycleOwner) {
-        }
-
-        return glSurfaceView
+        return binding?.root
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        binding = null
+
+    override fun onPause() {
+        super.onPause()
+        mOpenCvCameraView?.disableView()
     }
 
     override fun onResume() {
         super.onResume()
-        renderer.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        renderer.onPause()
-    }
-
-
-    private fun checkCameraPermission() {
-        context?.let { context->
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                println("카메라 권한 필요")
-                Toast.makeText(context,"카메라 권한 필요", Toast.LENGTH_LONG).show()
-            }
+        if (!OpenCVLoader.initDebug()) {
+            Log.d(TAG, "onResume :: Internal OpenCV library not found.")
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, context, mLoaderCallback)
+        } else {
+            Log.d(TAG, "onResum :: OpenCV library found inside package. Using it!")
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        renderer.onDestroy()
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mOpenCvCameraView?.disableView()
+        binding = null
     }
 
-    override fun onTagDetection(detection: ApriltagDetection1){
-        viewModel.onDetect(detection, renderer)
+
+    override fun onTagDetection(detection: ApriltagDetection) {
+//        viewModel.onDetect(detection, renderer)
+    }
+
+    override fun onTagDetect() {
+
+    }
+
+    override fun onCameraViewStarted(width: Int, height: Int) {
+    }
+
+    override fun onCameraViewStopped() {
+    }
+
+    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
+        matInput = inputFrame!!.rgba()
+
+        matResult?.let { mat ->
+            MainActivity.convertRGBtoGray(matInput.nativeObjAddr, mat.nativeObjAddr)
+            return mat
+        }
+        val mat = Mat(matInput.rows(), matInput.cols(), matInput.type())
+        MainActivity.convertRGBtoGray(matInput.nativeObjAddr, mat.nativeObjAddr)
+
+        matResult = mat
+        //drawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+        //drawRectangle(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+        return mat
     }
 
 
+
+
+    //여기서부턴 퍼미션 관련 메소드
+    private fun getCameraViewList(): List<CameraBridgeViewBase>? {
+
+        mOpenCvCameraView?.let {
+            return listOf<ApriltagCamera2View>(it)
+        }
+        return null
+    }
+
+    private val CAMERA_PERMISSION_REQUEST_CODE = 200
+
+
+    private fun onCameraPermissionGranted() {
+        val cameraViews = getCameraViewList() ?: return
+        for (cameraBridgeViewBase in cameraViews) {
+            cameraBridgeViewBase.setCameraPermissionGranted()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        var havePermission = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.CAMERA),
+                    CAMERA_PERMISSION_REQUEST_CODE
+                )
+                havePermission = false
+            }
+        }
+        if (havePermission) {
+            onCameraPermissionGranted()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            onCameraPermissionGranted()
+        } else {
+            showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private fun showDialogForPermission(msg: String) {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("알림")
+        builder.setMessage(msg)
+        builder.setCancelable(false)
+        builder.setPositiveButton(
+            "예"
+        ) { dialog, id ->
+            requestPermissions(
+                arrayOf(Manifest.permission.CAMERA),
+                CAMERA_PERMISSION_REQUEST_CODE
+            )
+        }
+        builder.setNegativeButton(
+            "아니오"
+        ) { arg0, arg1 ->
+            findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
+        }
+        builder.create().show()
+
+    }
 }

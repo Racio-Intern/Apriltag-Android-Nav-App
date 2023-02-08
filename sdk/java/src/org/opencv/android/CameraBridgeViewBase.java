@@ -63,6 +63,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     private void updateMatrix() {
         float mw = this.getWidth();
         float mh = this.getHeight();
+        Log.d("log", "mw : " + mw + " | mh : " + mh);
 
         float hw = this.getWidth() / 2.0f;
         float hh = this.getHeight() / 2.0f;
