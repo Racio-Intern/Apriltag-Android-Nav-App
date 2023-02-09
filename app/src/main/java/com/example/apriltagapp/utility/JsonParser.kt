@@ -25,7 +25,7 @@ class JsonParser {
 
             for(spot in spots) {
                 val spotName = spot.value as String
-                resultTag.addSpot(Spot(spotName))
+                resultTag.addSpot(Spot(spotName, id.toInt()))
             }
             tagList.add(resultTag)
 
