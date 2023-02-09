@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
@@ -34,6 +35,7 @@ import org.opencv.core.Mat
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     DetectionListener, CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
     private lateinit var cameraCalibrator: CameraCalibrator
+    private val viewModel: CameraViewModel by viewModels()
 
     var binding: FragmentCameraBinding? = null
 
@@ -72,6 +74,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     ): View? {
         binding = FragmentCameraBinding.inflate(inflater)
 
+
         mOpenCvCameraView = binding?.activitySurfaceView?.apply {
             this.setOnListener(this@CameraFragment)
             this.visibility = SurfaceView.VISIBLE
@@ -79,7 +82,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             this.setCameraIndex(0) // front-camera(1),  back-camera(0)
         }
 
-        println("전달받은 목적지 : ${args.destination}")
+        viewModel.onViewCreate(args.destination)
 
         return binding?.root
     }

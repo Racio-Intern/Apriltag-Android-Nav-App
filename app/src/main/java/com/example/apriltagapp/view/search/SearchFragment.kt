@@ -29,8 +29,17 @@ class SearchFragment : Fragment() {
     ): View? {
         binding = FragmentSearchBinding.inflate(inflater)
 
+        val spotNames = ArrayList<String>()
+        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, spotNames)
 
-        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, viewModel.spotsNames )
+        viewModel.spots.observe(viewLifecycleOwner) { spots->
+            spotNames.clear()
+            for(spot in spots) {
+                spotNames.add(spot.key)
+            }
+            arrayAdapter.notifyDataSetChanged()
+        }
+
 
         val transSpinner = binding?.spnTrans?.apply {
             adapter = arrayAdapter
@@ -41,7 +50,7 @@ class SearchFragment : Fragment() {
                     position: Int,
                     id: Long
                 ) {
-                    viewModel.onTransitionSet(position)
+                    destination = spotNames[position]
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -58,8 +67,8 @@ class SearchFragment : Fragment() {
                     position: Int,
                     id: Long
                 ) {
-                    destination = viewModel.spots[position].name
-                    viewModel.onDestinationSet(position)
+//                    destination = viewModel.spots[position].name
+//                    viewModel.onDestinationSet(position)
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {

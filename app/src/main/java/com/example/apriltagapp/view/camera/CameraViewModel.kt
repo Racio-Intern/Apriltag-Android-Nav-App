@@ -14,20 +14,32 @@ import kotlinx.coroutines.launch
 class CameraViewModel : ViewModel() {
     private var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
-    private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
 
+    private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
 
-    private var destination: Int = 10
-    private var currentTag: Tag = Tag()
+    private val _spots = MutableLiveData<HashMap<String, Int>>()
+    val spots: LiveData<HashMap<String, Int>>
+        get() = _spots
 
-    // Spots Initialize
-    val spots: Array<Spot> =
-        arrayOf(Spot("항공대", 1), Spot("현택이네", 1), Spot("혁수네", 2), Spot("은기네", 2))
+
+
+    private var destTag = Tag()
+    private var currentTag: Tag = Tag()
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
+        tagFamilyRepository.observeSpots(_spots)
+    }
+
+    fun onViewCreate(destination: String) {
+        println("전달받은 목적지 : $destination")
+        _spots.value?.let { spot->
+            val tagId = spot[destination]
+            destTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+        }
+
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
@@ -45,7 +57,7 @@ class CameraViewModel : ViewModel() {
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection) {
         val nextTag = try {
-            _tagGraph.value.shortestPath(detection.id, destination)
+            _tagGraph.value.shortestPath(detection.id, destTag.id)
         }catch(e: Exception) {
             // shortest Path 검색 결과가 없을 때
             return

@@ -7,30 +7,36 @@ class JsonParser {
     fun snapshotToTagFamily(snapshot: DataSnapshot): ArrayList<Tag> {
         val tagList = arrayListOf<Tag>()
         for(child in snapshot.children) {
-            val spots = child.child("spots").children
             val linkedTags = child.child("linkedTags").children
             val id = child.child("id").value as Long
 
             val resultLinkedTags: HashMap<Int, LinkedTag> = hashMapOf()
 
             for(linkedTag in linkedTags) {
-                val _id = linkedTag.child("id").value as Long
-                val _distance = linkedTag.child("distance").value as Long
+                val _id = (linkedTag.child("id").value as Long).toInt()
+                val _distance = (linkedTag.child("distance").value as Long).toInt()
                 val _direction = linkedTag.child("direction").value as String
 
-                resultLinkedTags[id.toInt()] = LinkedTag(_id.toInt(), _distance.toInt(), Direction.valueOf(_direction))
+                resultLinkedTags[id.toInt()] = LinkedTag(_id, _distance, Direction.valueOf(_direction))
             }
 
             val resultTag = Tag(id.toInt(), resultLinkedTags)
 
-            for(spot in spots) {
-                val spotName = spot.value as String
-                resultTag.addSpot(Spot(spotName, id.toInt()))
-            }
             tagList.add(resultTag)
 
         }
         return tagList
+    }
 
+    fun snapshotToSpot(snapshot: DataSnapshot): HashMap<String, Int> {
+        val spots = hashMapOf<String, Int>()
+        for(child in snapshot.children) {
+            val tagId = (child.child("tagId").value as Long).toInt()
+            val name = child.child("name").value as String
+            println("Tag id : $tagId , name : $name")
+            spots[name] =  tagId
+        }
+
+        return spots
     }
 }
