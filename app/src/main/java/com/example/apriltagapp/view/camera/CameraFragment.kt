@@ -22,6 +22,7 @@ import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
+import com.example.apriltagapp.view.CameraCalibrator
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
@@ -31,6 +32,8 @@ import org.opencv.core.Mat
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     DetectionListener, CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
+    private lateinit var cameraCalibrator: CameraCalibrator
+
     var binding: FragmentCameraBinding? = null
 
     private var detArray: DoubleArray? = null
@@ -43,6 +46,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     external fun ConvertRGBtoGray(matAddrInput: Long, matAddrResult: Long)
     external fun DrawRectangle(matAddrInput: Long, arr: DoubleArray?)
+    external fun Draw3D(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
+    external fun DrawArrow(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
+    external fun DrawArrow2(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
         override fun onManagerConnected(status: Int) {
@@ -103,6 +109,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
+        cameraCalibrator = CameraCalibrator(width, height)
     }
 
     override fun onCameraViewStopped() {
@@ -112,7 +119,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         matInput = inputFrame!!.rgba()
 
          if (state) {
-            DrawRectangle(matInput.nativeObjAddr, detArray)
+            //DrawRectangle(matInput.nativeObjAddr, detArray)
+            //Draw3D(matInput.nativeObjAddr, detArray, cameraCalibrator.cameraMatrix.nativeObjAddr, cameraCalibrator.distortionCoefficients.nativeObjAddr)
+             DrawArrow(matInput.nativeObjAddr, detArray, cameraCalibrator.cameraMatrix.nativeObjAddr, cameraCalibrator.distortionCoefficients.nativeObjAddr)
             state = false
         }
         return matInput

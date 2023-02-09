@@ -192,11 +192,7 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
 
                 if (!mDetections.isEmpty()) {
                     double[] arr = mDetections.get(0).p;
-                    Log.i(LOGTAG, "detection ID :" + mDetections.get(0).id);
                     listener.onTagDetect(arr);
-                }
-                else{
-                    Log.i(LOGTAG, "detection empty!");
                 }
 
 
