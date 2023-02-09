@@ -15,11 +15,13 @@ import androidx.navigation.fragment.findNavController
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentSearchBinding
 import com.example.apriltagapp.model.Spot
+import com.example.apriltagapp.utility.ParcelableArrivals
 
 class SearchFragment : Fragment() {
 
     private var binding: FragmentSearchBinding? = null
     private val viewModel: SearchViewModel by viewModels()
+    private var transition: String = "None"
     private var destination: String = "None"
 
 
@@ -29,8 +31,17 @@ class SearchFragment : Fragment() {
     ): View? {
         binding = FragmentSearchBinding.inflate(inflater)
 
+        val spotNames = ArrayList<String>()
+        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, spotNames)
 
-        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, viewModel.spotsNames )
+        viewModel.spots.observe(viewLifecycleOwner) { spots->
+            spotNames.clear()
+            for(spot in spots) {
+                spotNames.add(spot.key)
+            }
+            arrayAdapter.notifyDataSetChanged()
+        }
+
 
         val transSpinner = binding?.spnTrans?.apply {
             adapter = arrayAdapter
@@ -41,7 +52,8 @@ class SearchFragment : Fragment() {
                     position: Int,
                     id: Long
                 ) {
-                    viewModel.onTransitionSet(position)
+                    transition = spotNames[position]
+                    println("출발지 : $transition")
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -58,8 +70,8 @@ class SearchFragment : Fragment() {
                     position: Int,
                     id: Long
                 ) {
-                    destination = viewModel.spots[position].name
-                    viewModel.onDestinationSet(position)
+                    destination = spotNames[position]
+                    println("목적지 : $destination")
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -69,7 +81,7 @@ class SearchFragment : Fragment() {
         }
 
         binding?.btnStartNavi?.setOnClickListener {
-            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(destination)
+            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(ParcelableArrivals(transition, destination))
             findNavController().navigate(action)
         }
 

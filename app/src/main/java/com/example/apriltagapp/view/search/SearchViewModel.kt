@@ -5,39 +5,24 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.apriltagapp.model.Spot
 import com.example.apriltagapp.model.Tag
+import com.example.apriltagapp.model.repository.TagFamilyRepository
+import com.example.apriltagapp.utility.NonNullLiveData
+import com.example.apriltagapp.utility.NonNullMutableLiveData
 
 /** 출발지와 목적지 장소를 firebase에서 받아옵니다*/
 class SearchViewModel : ViewModel() {
+    private val tagFamilyRepository = TagFamilyRepository()
 
-    private val _destinationTag = MutableLiveData<Tag>()
-    val destinationTag: LiveData<Tag>
-        get() = _destinationTag
+    private val _spots = MutableLiveData<HashMap<String, Int>>()
+    val spots: LiveData<HashMap<String, Int>>
+        get() = _spots
 
-    val spots: Array<Spot> = arrayOf(
-        Spot("시리우스", 1),
-        Spot("나타", 1),
-        Spot("찰리", 1),
-        Spot("깅", 2),
-        Spot("수", 2),
-        Spot("간식", 3),
-        Spot("정수기", 3),
-        Spot("출입구", 4)
-    )
-    val spotsNames: ArrayList<String> = arrayListOf()
+    private val _destination = MutableLiveData<Spot>()
+    val destination: LiveData<Spot>
+        get() = _destination
 
     init {
-        for(spot in spots) {
-            spotsNames.add(spot.name)
-        }
+        // firebase에서 spot 데이터를 불러옵니다.
+        tagFamilyRepository.observeSpots(_spots)
     }
-
-    fun onTransitionSet(position: Int) {
-        println("출발지 : ${spots[position].name}")
-    }
-
-    fun onDestinationSet(position: Int) {
-        println("도착지 : ${spots[position].name}")
-
-    }
-
 }

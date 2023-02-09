@@ -24,6 +24,7 @@ class TagFamilyRepository() {
         database.getReference("tagMap")
             .addValueEventListener(object: ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
+                    println("스냅샷 : ${snapshot}")
                     val parseResult = jsonParser.snapshotToTagFamily(snapshot)
 
                     tagGraph.postValue(TagGraph(parseResult))
@@ -31,6 +32,20 @@ class TagFamilyRepository() {
 
                 override fun onCancelled(error: DatabaseError) {
                     println("cancelled : $error")
+                }
+
+            })
+    }
+
+    fun observeSpots(spots: MutableLiveData<HashMap<String, Int>>) {
+        database.getReference("spots")
+            .addValueEventListener(object: ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val parseResult = jsonParser.snapshotToSpot(snapshot)
+                    spots.postValue(parseResult)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
                 }
 
             })

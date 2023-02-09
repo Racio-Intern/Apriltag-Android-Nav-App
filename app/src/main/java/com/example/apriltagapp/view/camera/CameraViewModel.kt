@@ -9,25 +9,44 @@ import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
+import com.example.apriltagapp.utility.ParcelableArrivals
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
     private var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
     private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
-
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
 
-    private var destination: Int = 10
-    private var currentTag: Tag = Tag()
+    private val _spots = MutableLiveData<HashMap<String, Int>>()
+    val spots: LiveData<HashMap<String, Int>>
+        get() = _spots
 
-    // Spots Initialize
-    val spots: Array<Spot> =
-        arrayOf(Spot("항공대", 1), Spot("현택이네", 1), Spot("혁수네", 2), Spot("은기네", 2))
+
+
+    private var transTag = Tag()
+    private var destTag = Tag()
+    private var currentTag: Tag = Tag()
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
+        tagFamilyRepository.observeSpots(_spots)
+    }
+
+    fun onViewCreate(receivedData: ParcelableArrivals) {
+        println("전달받은 목적지 : ${receivedData.destination}")
+        _spots.value?.let { spot->
+            //목적지
+            var tagId = spot[receivedData.destination]
+            destTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+
+            //출발지
+            tagId = spot[receivedData.transition]
+            transTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+
+        }
+
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
@@ -52,7 +71,7 @@ class CameraViewModel : ViewModel() {
         currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:return
 
         // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
-        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destination)?:return
+        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id)?:return
 
         // 다음 Tag로 가기 위한 방향 설정
         for(tag in currentTag.linkedTags) {
