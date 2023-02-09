@@ -17,9 +17,8 @@ class JsonParser {
                 val _distance = (linkedTag.child("distance").value as Long).toInt()
                 val _direction = linkedTag.child("direction").value as String
 
-                resultLinkedTags[id.toInt()] = LinkedTag(_id, _distance, Direction.valueOf(_direction))
+                resultLinkedTags.add(LinkedTag(_id, _distance, Direction.valueOf(_direction)))
             }
-
             val resultTag = Tag(id.toInt(), resultLinkedTags)
 
             tagList.add(resultTag)

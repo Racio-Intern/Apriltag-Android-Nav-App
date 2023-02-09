@@ -82,7 +82,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             this.setCameraIndex(0) // front-camera(1),  back-camera(0)
         }
 
-        viewModel.onViewCreate(args.destination)
+        viewModel.onViewCreate(args.sendingData)
 
         return binding?.root
     }

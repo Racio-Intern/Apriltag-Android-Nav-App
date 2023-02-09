@@ -25,9 +25,8 @@
         android:label="fragment_camera"
         tools:layout="@layout/fragment_camera" >
         <argument
-            android:name="destination"
-            android:defaultValue="None"
-            app:argType="string"/>
+            android:name="sendingData"
+            app:argType="com.example.apriltagapp.utility.ParcelableArrivals" />
         <action
             android:id="@+id/action_cameraFragment_to_entryFragment"
             app:destination="@id/entryFragment" />
@@ -37,13 +36,12 @@
         android:name="com.example.apriltagapp.view.search.SearchFragment"
         android:label="fragment_search"
         tools:layout="@layout/fragment_search" >
-        <argument
-            android:name="destination"
-            android:defaultValue="None"
-            app:argType="string"/>
         <action
             android:id="@+id/action_searchFragment_to_cameraFragment"
             app:destination="@id/cameraFragment" />
+        <argument
+            android:name="sendingData"
+            app:argType="com.example.apriltagapp.utility.ParcelableArrivals" />
     </fragment>
     <fragment
         android:id="@+id/mapFragment"

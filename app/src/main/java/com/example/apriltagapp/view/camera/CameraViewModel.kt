@@ -9,6 +9,7 @@ import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
+import com.example.apriltagapp.utility.ParcelableArrivals
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
@@ -24,6 +25,7 @@ class CameraViewModel : ViewModel() {
 
 
 
+    private var transTag = Tag()
     private var destTag = Tag()
     private var currentTag: Tag = Tag()
 
@@ -32,11 +34,17 @@ class CameraViewModel : ViewModel() {
         tagFamilyRepository.observeSpots(_spots)
     }
 
-    fun onViewCreate(destination: String) {
-        println("전달받은 목적지 : $destination")
+    fun onViewCreate(receivedData: ParcelableArrivals) {
+        println("전달받은 목적지 : ${receivedData.destination}")
         _spots.value?.let { spot->
-            val tagId = spot[destination]
+            //목적지
+            var tagId = spot[receivedData.destination]
             destTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+
+            //출발지
+            tagId = spot[receivedData.transition]
+            transTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+
         }
 
     }
@@ -58,18 +66,12 @@ class CameraViewModel : ViewModel() {
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection) {
-        val nextTag = try {
-            _tagGraph.value.shortestPath(detection.id, destTag.id)
-        }catch(e: Exception) {
-            // shortest Path 검색 결과가 없을 때
-            return
-        }
 
         // ApriltagDetection을 통해 현재 위치의 Tag 탐지
         currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:return
 
         // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
-        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destination)?:return
+        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id)?:return
 
         // 다음 Tag로 가기 위한 방향 설정
         for(tag in currentTag.linkedTags) {
