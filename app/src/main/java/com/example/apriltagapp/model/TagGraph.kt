@@ -1,5 +1,7 @@
 package com.example.apriltagapp.model
 
+import java.util.PriorityQueue
+
 class TagGraph(private val tags: ArrayList<Tag>) {
 
 //    val tagFamily: Map<Int, Tag> = tags.associateBy { it.id }
@@ -10,7 +12,7 @@ class TagGraph(private val tags: ArrayList<Tag>) {
             println("[${tag.id}번 태그]")
             println("Spots : ${tag.spots}")
             for(linkedTag in tag.linkedTags) {
-                println("${linkedTag.value.id}번 태그로의 거리 : ${linkedTag.value.distance}, 방향 : ${linkedTag.value.direction}")
+                println("${linkedTag.id}번 태그로의 거리 : ${linkedTag.distance}, 방향 : ${linkedTag.direction}")
             }
             println("----------")
         }
@@ -24,9 +26,52 @@ class TagGraph(private val tags: ArrayList<Tag>) {
 
     }
 
-    /** 다익스트라 알고리즘으로 태그 간의 최단거리를 구합니다. */
-    fun shortestPath(start: Int, destination: Int): Tag{
-        return tagFamily.tagMap[2]?:
-        throw Exception("경로 탐색 결과, 최단 거리가 없습니다.")
+    /** MinHeap을 이용한 다익스트라 알고리즘으로 태그 간의 최단거리를 구합니다.
+     *  시간 복잡도 : O((|E| + |V| ) * log|V|)
+     * */
+    fun shortestPath(start: Int, destination: Int): Tag?{
+        val activeVertices = PriorityQueue<Pair<Int, Int>>()
+        val startTag = tagFamily.tagMap[start]
+        val minDistance: Array<Int> = Array<Int> (tagFamily.tagMap.size) {Int.MAX_VALUE}
+        val tagSelected: Array<Boolean> = Array<Boolean> (tagFamily.tagMap.size) {false}
+
+        val path: HashMap<Int, Int> = HashMap()
+
+        minDistance[start] = 0
+        activeVertices.add(Pair(0, start))
+        var where: Int = 0
+
+        while(!activeVertices.isEmpty()) {
+            where = activeVertices.peek().second
+
+            if (where == destination) {
+                println("min_distance : ${minDistance[where]}")
+                break
+            }
+
+            activeVertices.remove(activeVertices.peek())
+
+            tagFamily.tagMap[where]?. let{ tag ->
+                for(linkedTag in tag.linkedTags) {
+                    if(minDistance[linkedTag.id] > minDistance[where] + linkedTag.distance) {
+                        activeVertices.remove(Pair(minDistance[linkedTag.id], linkedTag.id))
+                        minDistance[linkedTag.id] = minDistance[where] + linkedTag.distance
+                        activeVertices.add(Pair(minDistance[linkedTag.id], linkedTag.id))
+
+                        path[linkedTag.id] = where
+                    }
+                }
+            }
+        }
+
+        var nextTagId: Int? = path[where]
+
+        while (nextTagId != start && nextTagId != null) {
+            nextTagId = path[nextTagId]
+        }
+
+        return nextTagId?.let {
+            tagFamily.tagMap[it]
+        }
     }
 }

@@ -11,7 +11,7 @@ class JsonParser {
             val linkedTags = child.child("linkedTags").children
             val id = child.child("id").value as Long
 
-            val resultLinkedTags: HashMap<Int, LinkedTag> = hashMapOf()
+            val resultLinkedTags: ArrayList<LinkedTag> = arrayListOf()
 
             for(linkedTag in linkedTags) {
                 val _id = linkedTag.child("id").value as Long
