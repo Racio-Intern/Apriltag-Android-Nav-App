@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
@@ -35,6 +36,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private lateinit var cameraCalibrator: CameraCalibrator
 
     var binding: FragmentCameraBinding? = null
+
+    private val args: CameraFragmentArgs by navArgs()
 
     private var detArray: DoubleArray? = null
     private var state = false
@@ -75,6 +78,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             this.setCvCameraViewListener(this@CameraFragment)
             this.setCameraIndex(0) // front-camera(1),  back-camera(0)
         }
+
+        println("전달받은 목적지 : ${args.destination}")
 
         return binding?.root
     }

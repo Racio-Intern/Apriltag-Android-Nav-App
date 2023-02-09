@@ -24,7 +24,7 @@ class CameraViewModel : ViewModel() {
 
     // Spots Initialize
     val spots: Array<Spot> =
-        arrayOf(Spot("항공대"), Spot("현택이네"), Spot("혁수네"), Spot("은기네"))
+        arrayOf(Spot("항공대", 1), Spot("현택이네", 1), Spot("혁수네", 2), Spot("은기네", 2))
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)

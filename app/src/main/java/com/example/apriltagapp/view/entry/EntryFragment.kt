@@ -24,8 +24,17 @@ class EntryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         binding?.btnCamera?.setOnClickListener {
             findNavController().navigate(R.id.action_entryFragment_to_cameraFragment)
+        }
+
+        binding?.btnSearch?.setOnClickListener {
+            findNavController().navigate(R.id.action_entryFragment_to_searchFragment)
+        }
+
+        binding?.btnMap?.setOnClickListener {
+            findNavController().navigate(R.id.action_entryFragment_to_mapFragment)
         }
     }
 
