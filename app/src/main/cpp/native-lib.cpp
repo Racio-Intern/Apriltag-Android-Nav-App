@@ -2,6 +2,7 @@
 #include <jni.h>
 
 using namespace cv;
+using namespace std;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -29,7 +30,186 @@ Java_com_example_apriltagapp_view_camera_CameraFragment_DrawRectangle(JNIEnv *en
     const Point* pts = pts1;
     int npts = 4;
 
-    cv::polylines(matInput, &pts, &npts, 1, true, Scalar(255.0, 0.0, 0.0), 2);
+    std::vector<Point2i> vector_pts;
+    vector_pts.push_back(Point((int)arr2[0], (int)arr2[1]));
+    vector_pts.push_back(Point((int)arr2[2], (int)arr2[3]));
+    vector_pts.push_back(Point((int)arr2[4], (int)arr2[5]));
+    vector_pts.push_back(Point((int)arr2[6], (int)arr2[7]));
 
+    //polylines(matInput, &pts, &npts, 1, true, Scalar(255.0, 0.0, 0.0), 2);
+    polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 2);
     //line(matInput, Point((int)arr2[0], (int)arr2[1]), Point((int)arr2[2], (int)arr2[3]), Scalar(255.0, 0.0, 0.0), 20);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_view_camera_CameraFragment_Draw3D(JNIEnv *env, jobject thiz,
+                                                                      jlong mat_addr_input,
+                                                                      jdoubleArray arr,
+                                                               jlong camera_matrix,
+                                                               jlong distortion_coefficients) {
+    Mat &matInput = *(Mat *)mat_addr_input;
+    jdouble* arr2 = (*env).GetDoubleArrayElements( arr, NULL);
+    Mat &cameraM = *(Mat *)camera_matrix;
+    Mat &distortionC = *(Mat *)distortion_coefficients;
+
+    vector<Point3f> objectPoint;
+    vector<Point2f> imagePoint;
+
+
+    imagePoint.push_back(Point2f((float) arr2[0], (float)arr2[1]));
+    imagePoint.push_back(Point2f((float) arr2[2], (float)arr2[3]));
+    imagePoint.push_back(Point2f((float) arr2[4], (float)arr2[5]));
+    imagePoint.push_back(Point2f((float) arr2[6], (float)arr2[7]));
+
+    Mat rvecs, tvecs;
+
+    float squareLength = 1;
+
+    objectPoint.push_back(Point3f(-squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, -squareLength / 2, 0));
+    objectPoint.push_back(Point3f(-squareLength/2, -squareLength / 2, 0));
+
+//    -   With @ref SOLVEPNP_IPPE_SQUARE this is a special case suitable for marker pose estimation.
+//            Number of input points must be 4. Object points must be defined in the following order:
+//    - point 0: [-squareLength / 2,  squareLength / 2, 0]
+//    - point 1: [ squareLength / 2,  squareLength / 2, 0]
+//    - point 2: [ squareLength / 2, -squareLength / 2, 0]
+//    - point 3: [-squareLength / 2, -squareLength / 2, 0]
+
+    solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
+    vector<cv::Point3f> obj_pts;
+
+    obj_pts.emplace_back(0, 0, 0);
+    obj_pts.emplace_back(1, 0, 0);
+    obj_pts.emplace_back(0, 1, 0);
+    obj_pts.emplace_back(0, 0, -1);
+
+    projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
+
+    line(matInput, imagePoint.at(0), imagePoint.at(1), Scalar(0, 0, 255), 10);
+    line(matInput, imagePoint.at(0), imagePoint.at(2), Scalar(0, 255, 0), 10);
+    line(matInput, imagePoint.at(0), imagePoint.at(3), Scalar(255, 0, 0), 10);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_view_camera_CameraFragment_DrawArrow(JNIEnv *env, jobject thiz,
+                                                               jlong mat_addr_input,
+                                                               jdoubleArray arr,
+                                                               jlong camera_matrix,
+                                                               jlong distortion_coefficients) {
+    Mat &matInput = *(Mat *)mat_addr_input;
+    jdouble* arr2 = (*env).GetDoubleArrayElements( arr, NULL);
+    Mat &cameraM = *(Mat *)camera_matrix;
+    Mat &distortionC = *(Mat *)distortion_coefficients;
+
+    vector<Point3f> objectPoint;
+    vector<Point2f> imagePoint;
+
+
+    imagePoint.push_back(Point2f((float) arr2[0], (float)arr2[1]));
+    imagePoint.push_back(Point2f((float) arr2[2], (float)arr2[3]));
+    imagePoint.push_back(Point2f((float) arr2[4], (float)arr2[5]));
+    imagePoint.push_back(Point2f((float) arr2[6], (float)arr2[7]));
+
+    Mat rvecs, tvecs;
+
+    float squareLength = 1;
+
+    objectPoint.push_back(Point3f(-squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, -squareLength / 2, 0));
+    objectPoint.push_back(Point3f(-squareLength/2, -squareLength / 2, 0));
+
+
+    solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
+    vector<cv::Point3f> obj_pts;
+
+    obj_pts.emplace_back(2, 1, -1);
+    obj_pts.emplace_back(2, 1.5, -1);
+    obj_pts.emplace_back(3, 0, -1);
+    obj_pts.emplace_back(2, -1.5, -1);
+    obj_pts.emplace_back(2, -1, -1);
+    obj_pts.emplace_back(-2, -1, -1);
+    obj_pts.emplace_back(-2, 1, -1);
+
+    projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
+
+    //line(matInput, imagePoint.at(0), imagePoint.at(1), Scalar(0, 0, 255), 10);
+    //line(matInput, imagePoint.at(0), imagePoint.at(2), Scalar(0, 255, 0), 10);
+    //line(matInput, imagePoint.at(0), imagePoint.at(3), Scalar(255, 0, 0), 10);
+    //polylines(matInput, imagePoint, true, Scalar(255.0, 0.0, 0.0), 10);
+
+    std::vector<Point2i> vector_pts;
+    vector_pts.push_back(imagePoint.at(0));
+    vector_pts.push_back(imagePoint.at(1));
+    vector_pts.push_back(imagePoint.at(2));
+    vector_pts.push_back(imagePoint.at(3));
+    vector_pts.push_back(imagePoint.at(4));
+    vector_pts.push_back(imagePoint.at(5));
+    vector_pts.push_back(imagePoint.at(6));
+    polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 20);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_apriltagapp_view_camera_CameraFragment_DrawArrow2(JNIEnv *env, jobject thiz,
+                                                                  jlong mat_addr_input,
+                                                                  jdoubleArray arr,
+                                                                  jlong camera_matrix,
+                                                                  jlong distortion_coefficients) {
+    Mat &matInput = *(Mat *)mat_addr_input;
+    jdouble* arr2 = (*env).GetDoubleArrayElements( arr, NULL);
+    Mat &cameraM = *(Mat *)camera_matrix;
+    Mat &distortionC = *(Mat *)distortion_coefficients;
+
+    vector<Point3f> objectPoint;
+    vector<Point2f> imagePoint;
+
+
+    imagePoint.push_back(Point2f((float) arr2[0], (float)arr2[1]));
+    imagePoint.push_back(Point2f((float) arr2[2], (float)arr2[3]));
+    imagePoint.push_back(Point2f((float) arr2[4], (float)arr2[5]));
+    imagePoint.push_back(Point2f((float) arr2[6], (float)arr2[7]));
+
+    Mat rvecs, tvecs;
+
+    float squareLength = 1;
+
+    objectPoint.push_back(Point3f(-squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, squareLength / 2, 0));
+    objectPoint.push_back(Point3f(squareLength/2, -squareLength / 2, 0));
+    objectPoint.push_back(Point3f(-squareLength/2, -squareLength / 2, 0));
+
+
+    solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
+    vector<cv::Point3f> obj_pts;
+
+    obj_pts.emplace_back(-1.2, 0, -0.3);
+    obj_pts.emplace_back(-1.2, 0, -4.3);
+    obj_pts.emplace_back(-1.7, 0, -4.3);
+    obj_pts.emplace_back(0, 0, -5.3);
+    obj_pts.emplace_back(1.7, 0, -4.3);
+    obj_pts.emplace_back(1.2, 0, -4.3);
+    obj_pts.emplace_back(1.2, 0, -0.3);
+
+
+    projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
+
+    //line(matInput, imagePoint.at(0), imagePoint.at(1), Scalar(0, 0, 255), 10);
+    //line(matInput, imagePoint.at(0), imagePoint.at(2), Scalar(0, 255, 0), 10);
+    //line(matInput, imagePoint.at(0), imagePoint.at(3), Scalar(255, 0, 0), 10);
+    //polylines(matInput, imagePoint, true, Scalar(255.0, 0.0, 0.0), 10);
+
+    std::vector<Point2i> vector_pts;
+    vector_pts.push_back(imagePoint.at(0));
+    vector_pts.push_back(imagePoint.at(1));
+    vector_pts.push_back(imagePoint.at(2));
+    vector_pts.push_back(imagePoint.at(3));
+    vector_pts.push_back(imagePoint.at(4));
+    vector_pts.push_back(imagePoint.at(5));
+    vector_pts.push_back(imagePoint.at(6));
+    polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 30);
 }
