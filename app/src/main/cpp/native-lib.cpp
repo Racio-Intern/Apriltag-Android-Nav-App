@@ -198,11 +198,6 @@ Java_com_example_apriltagapp_view_camera_CameraFragment_DrawArrow2(JNIEnv *env, 
 
     projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
 
-    //line(matInput, imagePoint.at(0), imagePoint.at(1), Scalar(0, 0, 255), 10);
-    //line(matInput, imagePoint.at(0), imagePoint.at(2), Scalar(0, 255, 0), 10);
-    //line(matInput, imagePoint.at(0), imagePoint.at(3), Scalar(255, 0, 0), 10);
-    //polylines(matInput, imagePoint, true, Scalar(255.0, 0.0, 0.0), 10);
-
     std::vector<Point2i> vector_pts;
     vector_pts.push_back(imagePoint.at(0));
     vector_pts.push_back(imagePoint.at(1));

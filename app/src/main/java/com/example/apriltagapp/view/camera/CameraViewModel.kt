@@ -33,34 +33,38 @@ class CameraViewModel : ViewModel() {
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection) {
         if(currentTag.id == detection.id) {
+            onPreviousTagArrival(detection)
         }
         else {
+            onNewTagArrival(detection)
         }
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
-    private fun onPreviousTagArrival() {
+    private fun onPreviousTagArrival(detection: ApriltagDetection) {
+
     }
 
     /** 기존 tag와 다른 새로운 태그를 detect 했을 때 호출하는 함수입니다.*/
     private fun onNewTagArrival(detection: ApriltagDetection) {
-        val nextTag = try {
-            _tagGraph.value.shortestPath(detection.id, destination)
-        }catch(e: Exception) {
-            // shortest Path 검색 결과가 없을 때
-            return
+
+        // ApriltagDetection을 통해 현재 위치의 Tag 탐지
+        currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:return
+
+        // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
+        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destination)?:return
+
+        // 다음 Tag로 가기 위한 방향 설정
+        for(tag in currentTag.linkedTags) {
+            if(tag.id == nextTag.id) {
+                direction = tag.direction
+                println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
+                return
+            }
         }
 
-        currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:Tag()
-        direction = currentTag.run{
-            this.linkedTags[nextTag.id]?.direction
-        }?:Direction.DEFAULT
-
-        println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
-        if(direction == Direction.DEFAULT) {
-            println("direction을 찾지 못했습니다.")
-            return
-        }
+        println("direction을 찾지 못했습니다.")
+        direction = Direction.DEFAULT
     }
 
     private fun createShape() {
