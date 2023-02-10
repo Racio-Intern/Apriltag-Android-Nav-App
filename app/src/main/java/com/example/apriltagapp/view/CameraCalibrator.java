@@ -1,7 +1,6 @@
 package com.example.apriltagapp.view;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.opencv.calib3d.Calib3d;
@@ -43,14 +42,8 @@ public class CameraCalibrator {
                  Calib3d.CALIB_FIX_K4 +
                  Calib3d.CALIB_FIX_K5;
         Mat.eye(3, 3, CvType.CV_64FC1).copyTo(mCameraMatrix);
-        //mCameraMatrix.put(0, 0, 1.0);
-        mCameraMatrix.put(0, 0, 3156.71852);
-        mCameraMatrix.put(1, 1, 3129.52243);
-        mCameraMatrix.put(0, 2, 359.097908);
-        mCameraMatrix.put(1, 2, 239.736909);
+        mCameraMatrix.put(0, 0, 1.0);
         Mat.zeros(5, 1, CvType.CV_64FC1).copyTo(mDistortionCoefficients);
-        Log.i(TAG, "row : " + Arrays.toString(mCameraMatrix.get(0, 1)) + "row2 :" + Arrays.toString(mCameraMatrix.get(2, 2)));
-        Log.i(TAG, "width : " + width + "height :" + height);
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
