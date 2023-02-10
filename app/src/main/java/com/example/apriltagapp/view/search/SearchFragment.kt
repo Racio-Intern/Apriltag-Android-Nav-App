@@ -7,24 +7,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.SpinnerAdapter
-import androidx.fragment.app.ListFragment
-import androidx.fragment.app.strictmode.FragmentStrictMode
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentSearchBinding
-import com.example.apriltagapp.model.Spot
 
 class SearchFragment : Fragment() {
 
     companion object {
-        const val DEFAULT_DESTINATION = "None"
+        const val DEFAULT_DESTINATION_ID = -1
     }
 
     private var binding: FragmentSearchBinding? = null
     private val viewModel: SearchViewModel by viewModels()
-    private var destination: String = DEFAULT_DESTINATION
+    private var destinationId: Int = DEFAULT_DESTINATION_ID
 
 
     override fun onCreateView(
@@ -33,13 +28,16 @@ class SearchFragment : Fragment() {
     ): View? {
         binding = FragmentSearchBinding.inflate(inflater)
 
-        val spotNames = ArrayList<String>()
-        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, spotNames)
+        val spotPairList = arrayListOf<Pair<String, Int>>()
+        val spotNameList = arrayListOf<String>()
+        val arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, spotNameList)
 
         viewModel.spots.observe(viewLifecycleOwner) { spots->
-            spotNames.clear()
+            spotNameList.clear()
+            spotPairList.clear()
             for(spot in spots) {
-                spotNames.add(spot.key)
+                spotNameList.add(spot.key)
+                spotPairList.add(Pair(spot.key, spot.value))
             }
             arrayAdapter.notifyDataSetChanged()
         }
@@ -54,8 +52,8 @@ class SearchFragment : Fragment() {
                     position: Int,
                     id: Long
                 ) {
-                    destination = spotNames[position]
-                    println("목적지 : $destination")
+                    destinationId = spotPairList[position].second
+                    println("목적지 : ${spotPairList[position].first}")
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -65,7 +63,7 @@ class SearchFragment : Fragment() {
         }
 
         binding?.btnStartNavi?.setOnClickListener {
-            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(destination)
+            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(destinationId)
             findNavController().navigate(action)
         }
 

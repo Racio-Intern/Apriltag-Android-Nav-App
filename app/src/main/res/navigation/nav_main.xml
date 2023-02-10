@@ -26,8 +26,8 @@
         tools:layout="@layout/fragment_camera" >
         <argument
             android:name="sendingData"
-            app:argType="string"
-            android:defaultValue="None" />
+            app:argType="integer"
+            android:defaultValue="-1" />
         <action
             android:id="@+id/action_cameraFragment_to_entryFragment"
             app:destination="@id/entryFragment" />
@@ -42,8 +42,8 @@
             app:destination="@id/cameraFragment" />
         <argument
             android:name="sendingData"
-            app:argType="string"
-            android:defaultValue="None" />
+            app:argType="integer"
+            android:defaultValue="-1" />
     </fragment>
     <fragment
         android:id="@+id/mapFragment"

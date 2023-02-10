@@ -19,27 +19,16 @@ class CameraViewModel : ViewModel() {
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
 
-    private val _spots = MutableLiveData<HashMap<String, Int>>()
-    val spots: LiveData<HashMap<String, Int>>
-        get() = _spots
-
-
     private var destTag = Tag()
     private var currentTag: Tag = Tag()
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
-        tagFamilyRepository.observeSpots(_spots)
     }
 
-    fun onSpotsObserved(receivedData: String) {
-        println("전달받은 목적지 : ${receivedData}")
-        _spots.value?.let { spot ->
-            //목적지
-            val tagId = spot[receivedData]
-            destTag = _tagGraph.value.tagFamily.tagMap[tagId] ?: return
-
-        }
+    fun onSpotsObserved(receivedTagId: Int) {
+        //목적지
+        destTag = _tagGraph.value.tagFamily.tagMap[receivedTagId] ?: return
 
     }
 
