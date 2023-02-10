@@ -10,7 +10,6 @@ import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
-import com.example.apriltagapp.utility.ParcelableArrivals
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
@@ -25,7 +24,6 @@ class CameraViewModel : ViewModel() {
         get() = _spots
 
 
-    private var transTag = Tag()
     private var destTag = Tag()
     private var currentTag: Tag = Tag()
 
@@ -34,16 +32,12 @@ class CameraViewModel : ViewModel() {
         tagFamilyRepository.observeSpots(_spots)
     }
 
-    fun onViewCreate(receivedData: ParcelableArrivals) {
-        println("전달받은 목적지 : ${receivedData.destination}")
+    fun onSpotsObserved(receivedData: String) {
+        println("전달받은 목적지 : ${receivedData}")
         _spots.value?.let { spot ->
             //목적지
-            var tagId = spot[receivedData.destination]
+            val tagId = spot[receivedData]
             destTag = _tagGraph.value.tagFamily.tagMap[tagId] ?: return
-
-            //출발지
-            tagId = spot[receivedData.transition]
-            transTag = _tagGraph.value.tagFamily.tagMap[tagId] ?: return
 
         }
 
@@ -51,7 +45,10 @@ class CameraViewModel : ViewModel() {
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection) {
-        println("detected!!")
+        if(destTag.id < 0) {
+            Log.d("ERROR", "Error : 목적지가 비정상적입니다 ")
+            return
+        }
         if (currentTag.id == detection.id) {
             onPreviousTagArrival(detection)
         } else {
@@ -69,7 +66,7 @@ class CameraViewModel : ViewModel() {
 
         // ApriltagDetection을 통해 현재 위치의 Tag 탐지
         currentTag = _tagGraph.value.tagFamily.tagMap[detection.id] ?: run {
-            Log.d("ERROR", "Error : Detected tag not in tag family")
+            Log.d("ERROR", "Error : Tag not in tag family")
             return
         }
 
@@ -79,6 +76,7 @@ class CameraViewModel : ViewModel() {
             return
         }
 
+        println("출발지 : ${currentTag.id}")
         println("next tag: ${nextTag.id}")
 
         // 다음 Tag로 가기 위한 방향 설정

@@ -24,6 +24,7 @@ import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.CameraCalibrator
+import com.example.apriltagapp.view.search.SearchFragment
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
@@ -81,7 +82,12 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             this.setCameraIndex(0) // front-camera(1),  back-camera(0)
         }
 
-        viewModel.onViewCreate(args.sendingData)
+
+        viewModel.spots.observe(viewLifecycleOwner) {
+            if(args.sendingData != SearchFragment.DEFAULT_DESTINATION) {
+                viewModel.onSpotsObserved(args.sendingData)
+            }
+        }
 
         return binding?.root
     }

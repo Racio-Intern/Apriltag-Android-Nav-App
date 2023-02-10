@@ -72,13 +72,10 @@ class TagGraph(private val tags: ArrayList<Tag>) {
         }
 
         var nextTagId: Int? = path[where]
-        println("next tag id : $nextTagId")
 
         while (nextTagId != start && nextTagId != null) {
             nextTagId = path[nextTagId]
         }
-        println("next tag id : $nextTagId")
-
 
         return nextTagId?.let {
             tagFamily.tagMap[it]
