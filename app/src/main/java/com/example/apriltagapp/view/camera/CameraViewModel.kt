@@ -1,5 +1,6 @@
 package com.example.apriltagapp.view.camera
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -24,7 +25,6 @@ class CameraViewModel : ViewModel() {
         get() = _spots
 
 
-
     private var transTag = Tag()
     private var destTag = Tag()
     private var currentTag: Tag = Tag()
@@ -36,14 +36,14 @@ class CameraViewModel : ViewModel() {
 
     fun onViewCreate(receivedData: ParcelableArrivals) {
         println("전달받은 목적지 : ${receivedData.destination}")
-        _spots.value?.let { spot->
+        _spots.value?.let { spot ->
             //목적지
             var tagId = spot[receivedData.destination]
-            destTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+            destTag = _tagGraph.value.tagFamily.tagMap[tagId] ?: return
 
             //출발지
             tagId = spot[receivedData.transition]
-            transTag = _tagGraph.value.tagFamily.tagMap[tagId]?:return
+            transTag = _tagGraph.value.tagFamily.tagMap[tagId] ?: return
 
         }
 
@@ -51,10 +51,10 @@ class CameraViewModel : ViewModel() {
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection) {
-        if(currentTag.id == detection.id) {
+        println("detected!!")
+        if (currentTag.id == detection.id) {
             onPreviousTagArrival(detection)
-        }
-        else {
+        } else {
             onNewTagArrival(detection)
         }
     }
@@ -68,14 +68,22 @@ class CameraViewModel : ViewModel() {
     private fun onNewTagArrival(detection: ApriltagDetection) {
 
         // ApriltagDetection을 통해 현재 위치의 Tag 탐지
-        currentTag = _tagGraph.value.tagFamily.tagMap[detection.id]?:return
+        currentTag = _tagGraph.value.tagFamily.tagMap[detection.id] ?: run {
+            Log.d("ERROR", "Error : Detected tag not in tag family")
+            return
+        }
 
         // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
-        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id)?:return
+        val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id) ?: run {
+            Log.d("ERROR", "Error : Shortest path returns null")
+            return
+        }
+
+        println("next tag: ${nextTag.id}")
 
         // 다음 Tag로 가기 위한 방향 설정
-        for(tag in currentTag.linkedTags) {
-            if(tag.id == nextTag.id) {
+        for (tag in currentTag.linkedTags) {
+            if (tag.id == nextTag.id) {
                 direction = tag.direction
                 println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
                 return
