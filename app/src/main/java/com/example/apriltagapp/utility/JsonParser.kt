@@ -32,7 +32,6 @@ class JsonParser {
         for(child in snapshot.children) {
             val tagId = (child.child("tagId").value as Long).toInt()
             val name = child.child("name").value as String
-            println("Tag id : $tagId , name : $name")
             spots[name] =  tagId
         }
 

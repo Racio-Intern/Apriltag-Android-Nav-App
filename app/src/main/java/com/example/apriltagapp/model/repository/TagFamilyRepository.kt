@@ -24,7 +24,6 @@ class TagFamilyRepository() {
         database.getReference("tagMap")
             .addValueEventListener(object: ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    println("스냅샷 : ${snapshot}")
                     val parseResult = jsonParser.snapshotToTagFamily(snapshot)
 
                     tagGraph.postValue(TagGraph(parseResult))

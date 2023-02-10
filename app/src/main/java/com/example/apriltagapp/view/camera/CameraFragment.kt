@@ -21,7 +21,6 @@ import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
-import com.example.apriltagapp.listener.DetectionListener
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.CameraCalibrator
@@ -33,7 +32,7 @@ import org.opencv.core.Mat
 
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
-    DetectionListener, CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
+    CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
     private lateinit var cameraCalibrator: CameraCalibrator
     private val viewModel: CameraViewModel by viewModels()
 
@@ -76,7 +75,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
 
         mOpenCvCameraView = binding?.activitySurfaceView?.apply {
-            this.setOnListener(this@CameraFragment)
+            this.setOnDetectionListener(this@CameraFragment)
             this.visibility = SurfaceView.VISIBLE
             this.setCvCameraViewListener(this@CameraFragment)
             this.setCameraIndex(0) // front-camera(1),  back-camera(0)
@@ -112,9 +111,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
 
-    override fun onTagDetection(detection: ApriltagDetection) {
-//        viewModel.onDetect(detection, renderer)
-    }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
         cameraCalibrator = CameraCalibrator(width, height)
@@ -210,9 +206,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     }
 
-    override fun onTagDetect(arr: DoubleArray) {
-        detArray = arr
+    override fun onTagDetect(detection: ApriltagDetection) {
+        detArray = detection.p
         state = true
+        viewModel.onDetect(detection)
     }
 
 }

@@ -54,7 +54,7 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
     protected Handler mBackgroundHandler;
     private TagDetectionListener listener;
 
-    public void setOnListener(TagDetectionListener _listener) {
+    public void setOnDetectionListener(TagDetectionListener _listener) {
         listener = _listener;
     }
     public ApriltagCamera2View(Context context, int cameraId) {
@@ -191,8 +191,8 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
                 mDetections = ApriltagNative.apriltag_detect_yuv_new(bytes, w, h);
 
                 if (!mDetections.isEmpty()) {
-                    double[] arr = mDetections.get(0).p;
-                    listener.onTagDetect(arr);
+                    ApriltagDetection detection = mDetections.get(0);
+                    listener.onTagDetect(detection);
                 }
 
 
