@@ -45,7 +45,7 @@ class TagGraph(private val tags: ArrayList<Tag>) {
         var where: Int = start
 
         while (!activeVertices.isEmpty()) {
-            activeVertices.peek()?.second?: run {
+            where = activeVertices.peek()?.second?: run {
                 Log.d("ERROR", "Error : active vertices empty!!")
                 return null
             }
