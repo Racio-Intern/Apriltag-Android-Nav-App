@@ -15,14 +15,16 @@ import androidx.navigation.fragment.findNavController
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentSearchBinding
 import com.example.apriltagapp.model.Spot
-import com.example.apriltagapp.utility.ParcelableArrivals
 
 class SearchFragment : Fragment() {
 
+    companion object {
+        const val DEFAULT_DESTINATION = "None"
+    }
+
     private var binding: FragmentSearchBinding? = null
     private val viewModel: SearchViewModel by viewModels()
-    private var transition: String = "None"
-    private var destination: String = "None"
+    private var destination: String = DEFAULT_DESTINATION
 
 
     override fun onCreateView(
@@ -43,24 +45,6 @@ class SearchFragment : Fragment() {
         }
 
 
-        val transSpinner = binding?.spnTrans?.apply {
-            adapter = arrayAdapter
-            this.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    transition = spotNames[position]
-                    println("출발지 : $transition")
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                }
-
-            }
-        }
         val destSpinner = binding?.spnDest?.apply {
             adapter = arrayAdapter
             this.onItemSelectedListener = object:AdapterView.OnItemSelectedListener {
@@ -81,7 +65,7 @@ class SearchFragment : Fragment() {
         }
 
         binding?.btnStartNavi?.setOnClickListener {
-            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(ParcelableArrivals(transition, destination))
+            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(destination)
             findNavController().navigate(action)
         }
 

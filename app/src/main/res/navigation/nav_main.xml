@@ -26,7 +26,8 @@
         tools:layout="@layout/fragment_camera" >
         <argument
             android:name="sendingData"
-            app:argType="com.example.apriltagapp.utility.ParcelableArrivals" />
+            app:argType="string"
+            android:defaultValue="None" />
         <action
             android:id="@+id/action_cameraFragment_to_entryFragment"
             app:destination="@id/entryFragment" />
@@ -41,7 +42,8 @@
             app:destination="@id/cameraFragment" />
         <argument
             android:name="sendingData"
-            app:argType="com.example.apriltagapp.utility.ParcelableArrivals" />
+            app:argType="string"
+            android:defaultValue="None" />
     </fragment>
     <fragment
         android:id="@+id/mapFragment"
