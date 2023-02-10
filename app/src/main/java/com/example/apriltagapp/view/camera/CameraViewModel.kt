@@ -13,6 +13,7 @@ import com.example.apriltagapp.utility.NonNullMutableLiveData
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
+    private val LOGTAG = "CameraViewModel"
     private var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
     private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
@@ -35,7 +36,7 @@ class CameraViewModel : ViewModel() {
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
     fun onDetect(detection: ApriltagDetection) {
         if(destTag.id < 0) {
-            Log.d("ERROR", "Error : 목적지가 비정상적입니다 ")
+            Log.e(LOGTAG, "Error : 목적지가 비정상적입니다 ")
             return
         }
         if (currentTag.id == detection.id) {
@@ -55,13 +56,14 @@ class CameraViewModel : ViewModel() {
 
         // ApriltagDetection을 통해 현재 위치의 Tag 탐지
         currentTag = _tagGraph.value.tagFamily.tagMap[detection.id] ?: run {
-            Log.d("ERROR", "Error : Tag not in tag family")
+            Log.e(LOGTAG, "Error : Tag not in tag family")
             return
         }
 
+        println("------------------------------------------------------------------------")
         // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
         val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id) ?: run {
-            Log.d("ERROR", "Error : Shortest path returns null")
+            Log.e(LOGTAG, "Error : Shortest path returns null")
             return
         }
 

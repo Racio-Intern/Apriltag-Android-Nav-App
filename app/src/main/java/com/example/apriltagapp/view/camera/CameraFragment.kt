@@ -19,41 +19,33 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
+import apriltag.ApriltagDrawNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
-import com.example.apriltagapp.view.CameraCalibrator
 import com.example.apriltagapp.view.search.SearchFragment
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-
+import org.opencv.core.Point3
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
-    private lateinit var cameraCalibrator: CameraCalibrator
     private val viewModel: CameraViewModel by viewModels()
 
     var binding: FragmentCameraBinding? = null
 
     private val args: CameraFragmentArgs by navArgs()
 
-    private var detArray: DoubleArray? = null
-    private var state = false
+    private var aprilDetection: ApriltagDetection? = null
 
     private var mOpenCvCameraView: ApriltagCamera2View? = null
 
     private val TAG = "opencv"
     private lateinit var matInput: Mat
-
-    external fun ConvertRGBtoGray(matAddrInput: Long, matAddrResult: Long)
-    external fun DrawRectangle(matAddrInput: Long, arr: DoubleArray?)
-    external fun Draw3D(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
-    external fun DrawArrow(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
-    external fun DrawArrow2(matAddrInput: Long, arr: DoubleArray?, cameraMatrix: Long, distortionCoefficients: Long)
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
         override fun onManagerConnected(status: Int) {
@@ -120,7 +112,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
 
     override fun onCameraViewStarted(width: Int, height: Int) {
-        cameraCalibrator = CameraCalibrator(width, height)
     }
 
     override fun onCameraViewStopped() {
@@ -129,12 +120,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
         matInput = inputFrame!!.rgba()
 
-         if (state) {
-            //DrawRectangle(matInput.nativeObjAddr, detArray)
-            //Draw3D(matInput.nativeObjAddr, detArray, cameraCalibrator.cameraMatrix.nativeObjAddr, cameraCalibrator.distortionCoefficients.nativeObjAddr)
-             DrawArrow(matInput.nativeObjAddr, detArray, cameraCalibrator.cameraMatrix.nativeObjAddr, cameraCalibrator.distortionCoefficients.nativeObjAddr)
-            state = false
+        aprilDetection = aprilDetection?.let{ detection ->
+            ApriltagDrawNative.DrawArrow(matInput.nativeObjAddr, detection.p, ALLOW_RIGHT)
+            null
         }
+
         return matInput
     }
 
@@ -214,9 +204,22 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     override fun onTagDetect(detection: ApriltagDetection) {
-        detArray = detection.p
-        state = true
+        this.aprilDetection = detection
         viewModel.onDetect(detection)
     }
 
+    companion object{
+        val ALLOW_RIGHT = arrayOf(
+            2.0, 1.0, 0.0,
+            2.0, 1.5, 0.0,
+            3.0, 0.0, 0.0,
+            2.0, -1.5, 0.0,
+            2.0, -1.0, 0.0,
+            -2.0, -1.0, 0.0,
+            -2.0, 1.0, 0.0
+        ).toDoubleArray()
+
+        val ALLOW_STRAIT = 0
+        val ALLOW_BACKWARD = 0
+    }
 }

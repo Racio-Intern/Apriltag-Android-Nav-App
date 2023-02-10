@@ -1,10 +1,11 @@
 package com.example.apriltagapp.model
 
 import android.util.Log
-import java.util.PriorityQueue
+import java.util.*
 
 class TagGraph(private val tags: ArrayList<Tag>) {
 
+    private val LOGTAG = "TagGraph"
     //    val tagFamily: Map<Int, Tag> = tags.associateBy { it.id }
     val tagFamily: TagFamily = TagFamily(tags)
 
@@ -33,23 +34,23 @@ class TagGraph(private val tags: ArrayList<Tag>) {
 
     fun shortestPath(start: Int, destination: Int): Tag? {
         val activeVertices = PriorityQueue<Pair<Int, Int>> { a, b -> a.first - b.first }
-        val startTag = tagFamily.tagMap[start]
-        val minDistance: Array<Int> = Array<Int>(tagFamily.tagMap.size) { Int.MAX_VALUE }
-        val tagSelected: Array<Boolean> = Array<Boolean>(tagFamily.tagMap.size) { false }
 
+        // 최단 거리를 기록하는 배열
+        val minDistance: Array<Int> = Array (tagFamily.tagMap.size) {Int.MAX_VALUE}
 
+        // 역추적을 위한 HashMap
         val path: HashMap<Int, Int> = HashMap()
 
         minDistance[start] = 0
         activeVertices.add(Pair(0, start))
-        var where: Int = start
+        var where = 0
 
-        while (!activeVertices.isEmpty()) {
-            where = activeVertices.peek()?.second?: run {
-                Log.d("ERROR", "Error : active vertices empty!!")
+        while(!activeVertices.isEmpty()) {
+            // 새로운 정점 선택
+            where = activeVertices.peek()?.second ?: run{
+                Log.e(LOGTAG, "Error : active vertices empty!!")
                 return null
             }
-
 
             if (where == destination) {
                 println("min_distance : ${minDistance[where]}")
@@ -58,27 +59,37 @@ class TagGraph(private val tags: ArrayList<Tag>) {
 
             activeVertices.remove(activeVertices.peek())
 
-            tagFamily.tagMap[where]?.let { tag ->
-                for (linkedTag in tag.linkedTags) {
-                    if (minDistance[linkedTag.id] > minDistance[where] + linkedTag.distance) {
-                        activeVertices.remove(Pair(minDistance[linkedTag.id], linkedTag.id))
-                        minDistance[linkedTag.id] = minDistance[where] + linkedTag.distance
-                        activeVertices.add(Pair(minDistance[linkedTag.id], linkedTag.id))
+            // 새로운 정점을 통해 갈 때 더 짧은 경로가 발견 된다면 그 정보 갱신
+            tagFamily.tagMap[where]?.let{ newTag ->
+                for(tag in newTag.linkedTags) {
+                    if(minDistance[tag.id] > minDistance[where] + tag.distance) {
+                        activeVertices.remove(Pair(minDistance[tag.id], tag.id))
+                        minDistance[tag.id] = minDistance[where] + tag.distance
+                        activeVertices.add(Pair(minDistance[tag.id], tag.id))
 
-                        path[linkedTag.id] = where
+                        path[tag.id] = where
                     }
                 }
+            } ?: run{
+                Log.e(LOGTAG, "Error : tagMap[$where] is empty!!")
+                return null
             }
         }
 
-        var nextTagId: Int? = path[where]
+        var nextTagId: Int = where
 
-        while (nextTagId != start && nextTagId != null) {
-            nextTagId = path[nextTagId]
+        while (path[nextTagId] != start) {
+            nextTagId = path[nextTagId] ?: run{
+                Log.e(LOGTAG, "Error : path[$nextTagId] is empty!!")
+                return null
+            }
         }
 
-        return nextTagId?.let {
-            tagFamily.tagMap[it]
+        println("finally next tag id : $nextTagId")
+
+        return tagFamily.tagMap[nextTagId] ?: run{
+            Log.e(LOGTAG, "Error : tagMap[$nextTagId] is empty!!")
+            null
         }
     }
 }
