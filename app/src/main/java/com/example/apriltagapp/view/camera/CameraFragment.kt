@@ -83,8 +83,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         }
 
 
-        viewModel.spots.observe(viewLifecycleOwner) {
-            if(args.sendingData != SearchFragment.DEFAULT_DESTINATION) {
+        //그래프가 만들어지면 전달받은 args를 viewmodel에 넘겨줍니다.
+        viewModel.tagGraph.observe(viewLifecycleOwner) {
+            if(args.sendingData != SearchFragment.DEFAULT_DESTINATION_ID) {
                 viewModel.onSpotsObserved(args.sendingData)
             }
         }
