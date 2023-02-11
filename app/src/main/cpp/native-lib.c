@@ -76,7 +76,7 @@ Java_apriltag_ApriltagNative_apriltag_1native_1init(
 }
 
 /*
- * Class:     edu_umich_eecs_april_apriltag_ApriltagNative
+ * Class:     Java_apriltag_ApriltagNative
  * Method:    apriltag_init
  * Signature: (Ljava/lang/String;IDDI)V
  */
@@ -128,8 +128,8 @@ Java_apriltag_ApriltagNative_apriltag_1init(
 }
 
 /*
- * Class:     edu_umich_eecs_april_apriltag_ApriltagNative
- * Method:    apriltag_detect_yuv
+ * Class:     Java_apriltag_ApriltagNative
+ * Method:    apriltag_detect
  * Signature: ([BII)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL
