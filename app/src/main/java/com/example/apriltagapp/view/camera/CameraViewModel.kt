@@ -14,8 +14,18 @@ import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
     private val LOGTAG = "CameraViewModel"
-    private var direction = Direction.DEFAULT
+
+    private val _isRunning = MutableLiveData<Boolean>(false)
+
+    val isRunning: LiveData<Boolean>
+        get() = _isRunning
+
+    private val _direction = MutableLiveData<Direction>(Direction.DEFAULT)
+
+    val direction: LiveData<Direction>
+        get() = _direction
     private val tagFamilyRepository = TagFamilyRepository()
+
     private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
@@ -42,7 +52,9 @@ class CameraViewModel : ViewModel() {
         if (currentTag.id == detection.id) {
             onPreviousTagArrival(detection)
         } else {
+            _isRunning.value = true
             onNewTagArrival(detection)
+            _isRunning.value = false
         }
     }
 
@@ -70,17 +82,18 @@ class CameraViewModel : ViewModel() {
         println("출발지 : ${currentTag.id}")
         println("next tag: ${nextTag.id}")
 
+
         // 다음 Tag로 가기 위한 방향 설정
         for (tag in currentTag.linkedTags) {
             if (tag.id == nextTag.id) {
-                direction = tag.direction
+                _direction.value = tag.direction
                 println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
                 return
             }
         }
 
         println("direction을 찾지 못했습니다.")
-        direction = Direction.DEFAULT
+        _direction.value = Direction.DEFAULT
     }
 
     private fun createShape() {

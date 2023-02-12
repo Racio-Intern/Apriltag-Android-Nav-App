@@ -26,8 +26,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         init {
             System.loadLibrary("opencv_java4")
-            System.loadLibrary("native-lib")
-            System.loadLibrary("apriltag")
+            System.loadLibrary("opencv_native_lib")
+            System.loadLibrary("apriltag_native_lib")
         }
     }
 
@@ -46,8 +46,8 @@ class MainActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         )
 
-        ApriltagNative.native_init_new()
-        ApriltagNative.apriltag_init_new("tagStandard41h12", 2, 4.0, 0.0, 1)
+        ApriltagNative.apriltag_native_init()
+        ApriltagNative.apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
 
         setContentView(binding.root)
     }

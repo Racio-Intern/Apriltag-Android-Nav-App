@@ -19,7 +19,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
-import apriltag.ApriltagDrawNative
+import apriltag.OpenCVNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
@@ -30,22 +30,26 @@ import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import org.opencv.core.Point3
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
     private val viewModel: CameraViewModel by viewModels()
-
     var binding: FragmentCameraBinding? = null
-
     private val args: CameraFragmentArgs by navArgs()
-
     private var aprilDetection: ApriltagDetection? = null
-
     private var mOpenCvCameraView: ApriltagCamera2View? = null
-
+    private var state: Boolean = true
     private val TAG = "opencv"
     private lateinit var matInput: Mat
+
+    //DEFAULT, LEFT, RIGHT, STRAIT, BACKWARDS;
+    init{
+        drawArr[0] = ALLOW_DEFAULT
+        drawArr[1] = ALLOW_LEFT
+        drawArr[2] = ALLOW_RIGHT
+        drawArr[3] = ALLOW_FORWARD
+        drawArr[4] = ALLOW_BACKWARD
+    }
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
         override fun onManagerConnected(status: Int) {
@@ -79,6 +83,16 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         viewModel.tagGraph.observe(viewLifecycleOwner) {
             if(args.sendingData != SearchFragment.DEFAULT_DESTINATION_ID) {
                 viewModel.onSpotsObserved(args.sendingData)
+            }
+        }
+
+        viewModel.isRunning.observe(viewLifecycleOwner){
+            if(it == true){
+                state = false
+            }
+            else{
+
+                state = true
             }
         }
 
@@ -117,11 +131,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraViewStopped() {
     }
 
-    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
-        matInput = inputFrame!!.rgba()
-
+    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+        matInput = inputFrame.rgba()
         aprilDetection = aprilDetection?.let{ detection ->
-            ApriltagDrawNative.DrawArrow(matInput.nativeObjAddr, detection.p, ALLOW_RIGHT)
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, drawArr[viewModel.direction.value?.ordinal ?: 0])
             null
         }
 
@@ -205,10 +218,19 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     override fun onTagDetect(detection: ApriltagDetection) {
         this.aprilDetection = detection
-        viewModel.onDetect(detection)
+        if(state) {
+            viewModel.onDetect(detection)
+        }
     }
 
     companion object{
+        val ALLOW_DEFAULT = arrayOf(
+            0.5, 0.5, 0.0,
+            0.5, -0.5, 0.0,
+            -0.5, -0.5, 0.0,
+            -0.5, 0.5, 0.0
+        ).toDoubleArray()
+
         val ALLOW_RIGHT = arrayOf(
             2.0, 1.0, 0.0,
             2.0, 1.5, 0.0,
@@ -219,7 +241,36 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             -2.0, 1.0, 0.0
         ).toDoubleArray()
 
-        val ALLOW_STRAIT = 0
-        val ALLOW_BACKWARD = 0
+        val ALLOW_LEFT = arrayOf(
+            -2.0, 1.0, 0.0,
+            -2.0, 1.5, 0.0,
+            -3.0, 0.0, 0.0,
+            -2.0, -1.5, 0.0,
+            -2.0, -1.0, 0.0,
+            2.0, -1.0, 0.0,
+            2.0, 1.0, 0.0
+        ).toDoubleArray()
+
+        val ALLOW_FORWARD = arrayOf(
+            -1.0, 0.0, -5.0,
+            1.0, 0.0, -5.0,
+            1.5, 0.0, -2.0,
+            0.0, 0.0, -0.5,
+            -1.5, 0.0, -2.0,
+            -1.0, 0.0, -2.0,
+            -1.5, 0.0, -5.0
+        ).toDoubleArray()
+
+        val ALLOW_BACKWARD = arrayOf(
+            -1.2, 0.0, -0.3,
+            -1.2, 0.0, -4.3,
+            -1.7, 0.0, -4.3,
+            0.0, 0.0, -5.3,
+            1.7, 0.0, -4.3,
+            1.2, 0.0, -4.3,
+            1.2, 0.0, -0.3
+        ).toDoubleArray()
+
+        var drawArr = Array<DoubleArray>(5) { doubleArrayOf() }
     }
 }
