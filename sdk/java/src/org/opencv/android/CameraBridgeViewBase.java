@@ -1,5 +1,8 @@
 package org.opencv.android;
 
+import static org.opencv.core.Core.ROTATE_90_CLOCKWISE;
+import static org.opencv.core.Core.rotate;
+
 import java.util.List;
 
 import org.opencv.BuildConfig;

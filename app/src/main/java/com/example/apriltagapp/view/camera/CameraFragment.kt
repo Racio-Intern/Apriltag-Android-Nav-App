@@ -15,7 +15,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.rotationMatrix
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -32,6 +31,9 @@ import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimedValue
+import kotlin.time.measureTimedValue
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
@@ -104,13 +106,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         }
 
         viewModel.isRunning.observe(viewLifecycleOwner){
-            if(it == true){
-                state = false
-            }
-            else{
-
-                state = true
-            }
+            state = it != true
         }
 
         return binding?.root
@@ -148,12 +144,15 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraViewStopped() {
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+
         matInput = inputFrame.rgba()
 
         aprilDetection?.let{ detection ->
             matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, matResult.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.value?.ordinal ?: 0])
+
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, matResult.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             aprilDetection = null
         }
 
@@ -172,7 +171,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         return null
     }
 
-    private val CAMERA_PERMISSION_REQUEST_CODE = 200
+//    private val CAMERA_PERMISSION_REQUEST_CODE = 200
 
 
     private fun onCameraPermissionGranted() {
@@ -254,13 +253,13 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         ).toDoubleArray()
 
         val arrowForwardCoords = arrayOf(
-            -1.0, 0.0, -5.0,
             1.0, 0.0, -5.0,
+            1.0, 0.0, -2.0,
             1.5, 0.0, -2.0,
             0.0, 0.0, -0.5,
             -1.5, 0.0, -2.0,
             -1.0, 0.0, -2.0,
-            -1.5, 0.0, -5.0
+            -1.0, 0.0, -5.0
         ).toDoubleArray()
 
         val arrowBackwardCoords = arrayOf(
