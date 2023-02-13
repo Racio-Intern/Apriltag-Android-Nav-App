@@ -44,11 +44,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     //DEFAULT, LEFT, RIGHT, STRAIT, BACKWARDS;
     init{
-        drawArr[0] = ALLOW_DEFAULT
-        drawArr[1] = ALLOW_LEFT
-        drawArr[2] = ALLOW_RIGHT
-        drawArr[3] = ALLOW_FORWARD
-        drawArr[4] = ALLOW_BACKWARD
+        coordnateArray[0] = defaultCoords
+        coordnateArray[1] = arrowLeftCoords
+        coordnateArray[2] = arrowRightCoords
+        coordnateArray[3] = arrowForwardCoords
+        coordnateArray[4] = arrowBackwardCoords
     }
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
@@ -134,7 +134,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         matInput = inputFrame.rgba()
         aprilDetection = aprilDetection?.let{ detection ->
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, drawArr[viewModel.direction.value?.ordinal ?: 0])
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.value?.ordinal ?: 0])
             null
         }
 
@@ -224,14 +224,15 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     companion object{
-        val ALLOW_DEFAULT = arrayOf(
+        // points(x, y, z)
+        val defaultCoords = arrayOf(
             0.5, 0.5, 0.0,
             0.5, -0.5, 0.0,
             -0.5, -0.5, 0.0,
             -0.5, 0.5, 0.0
         ).toDoubleArray()
 
-        val ALLOW_RIGHT = arrayOf(
+        val arrowRightCoords = arrayOf(
             2.0, 1.0, 0.0,
             2.0, 1.5, 0.0,
             3.0, 0.0, 0.0,
@@ -241,7 +242,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             -2.0, 1.0, 0.0
         ).toDoubleArray()
 
-        val ALLOW_LEFT = arrayOf(
+        val arrowLeftCoords = arrayOf(
             -2.0, 1.0, 0.0,
             -2.0, 1.5, 0.0,
             -3.0, 0.0, 0.0,
@@ -251,7 +252,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             2.0, 1.0, 0.0
         ).toDoubleArray()
 
-        val ALLOW_FORWARD = arrayOf(
+        val arrowForwardCoords = arrayOf(
             -1.0, 0.0, -5.0,
             1.0, 0.0, -5.0,
             1.5, 0.0, -2.0,
@@ -261,7 +262,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             -1.5, 0.0, -5.0
         ).toDoubleArray()
 
-        val ALLOW_BACKWARD = arrayOf(
+        val arrowBackwardCoords = arrayOf(
             -1.2, 0.0, -0.3,
             -1.2, 0.0, -4.3,
             -1.7, 0.0, -4.3,
@@ -271,6 +272,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             1.2, 0.0, -0.3
         ).toDoubleArray()
 
-        var drawArr = Array<DoubleArray>(5) { doubleArrayOf() }
+        var coordnateArray = Array<DoubleArray>(5) { doubleArrayOf() }
     }
 }
