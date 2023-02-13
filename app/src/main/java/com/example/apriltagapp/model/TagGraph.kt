@@ -77,15 +77,19 @@ class TagGraph(private val tags: ArrayList<Tag>) {
         }
 
         var nextTagId: Int = where
+        val tagDirectionArray: ArrayList<Int> = arrayListOf(where)
 
         while (path[nextTagId] != start) {
+            tagDirectionArray.add(0, path[nextTagId]?: 0)
             nextTagId = path[nextTagId] ?: run{
                 Log.e(LOGTAG, "Error : path[$nextTagId] is empty!!")
                 return null
             }
         }
 
-        println("finally next tag id : $nextTagId")
+        tagDirectionArray.add(0, start)
+        println("next tag id : $nextTagId")
+        println("최단 경로 : $tagDirectionArray")
 
         return tagFamily.tagMap[nextTagId] ?: run{
             Log.e(LOGTAG, "Error : tagMap[$nextTagId] is empty!!")
