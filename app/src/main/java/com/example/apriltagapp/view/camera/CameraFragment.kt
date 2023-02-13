@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -41,6 +42,20 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var state: Boolean = true
     private val TAG = "opencv"
     private lateinit var matInput: Mat
+
+    private val permissionList = Manifest.permission.CAMERA
+
+    private  val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) {
+        when(it) {
+            true -> {
+                onCameraPermissionGranted()
+            }
+            false -> {
+                showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
+            }
+        }
+    }
 
     //DEFAULT, LEFT, RIGHT, STRAIT, BACKWARDS;
     init{
@@ -168,29 +183,13 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         var havePermission = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.CAMERA),
-                    CAMERA_PERMISSION_REQUEST_CODE
-                )
+                requestPermission.launch(permissionList)
                 havePermission = false
             }
         }
         if (havePermission) {
             onCameraPermissionGranted()
         }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            onCameraPermissionGranted()
-        } else {
-            showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -201,15 +200,13 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         builder.setCancelable(false)
         builder.setPositiveButton(
             "예"
-        ) { dialog, id ->
-            requestPermissions(
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_REQUEST_CODE
-            )
+        ) { _, _ ->
+            requestPermission.launch(
+                Manifest.permission.CAMERA)
         }
         builder.setNegativeButton(
             "아니오"
-        ) { arg0, arg1 ->
+        ) { _, _ ->
             findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
         }
         builder.create().show()
