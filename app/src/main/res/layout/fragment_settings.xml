@@ -1,14 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".view.SettingsFragment">
 
     <!-- TODO: Update blank fragment layout -->
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="settings" />
+        android:text="settings"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="-36dp" />
+
+    <Button
+        android:id="@+id/btn_decimation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="96dp"
+        android:layout_marginTop="72dp"
+        android:text="decimation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btn_threads"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="threads"
+        app:layout_constraintStart_toStartOf="@+id/btn_decimation"
+        app:layout_constraintTop_toBottomOf="@+id/btn_decimation" />
+
+    <Button
+        android:id="@+id/btn_tag_family"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="tag family"
+        app:layout_constraintStart_toStartOf="@+id/btn_threads"
+        app:layout_constraintTop_toBottomOf="@+id/btn_threads" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
