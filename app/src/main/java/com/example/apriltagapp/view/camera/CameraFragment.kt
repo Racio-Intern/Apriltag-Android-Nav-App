@@ -146,13 +146,12 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     @OptIn(ExperimentalTime::class)
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-
         matInput = inputFrame.rgba()
 
         aprilDetection?.let{ detection ->
             matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
-
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, matResult.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
+            OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
             aprilDetection = null
         }
 
@@ -216,10 +215,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     }
 
-    override fun onTagDetect(detection: ApriltagDetection) {
-        this.aprilDetection = detection
+    override fun onTagDetect(aprilDetection: ApriltagDetection) {
+        this.aprilDetection = aprilDetection
         if(state) {
-            viewModel.onDetect(detection)
+            viewModel.onDetect(aprilDetection)
         }
     }
 
