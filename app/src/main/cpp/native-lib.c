@@ -2,13 +2,11 @@
 #include <string.h>
 #include <android/bitmap.h>
 #include <android/log.h>
-
 #include "apriltag.h"
 #include "tag36h10.h"
 #include "tag36h11.h"
 #include "tag36artoolkit.h"
 #include "tag25h9.h"
-// #include "tag25h7.h"
 #include "apriltag/tag16h5.h"
 #include "tagStandard41h12.h"
 
@@ -24,16 +22,8 @@ static struct {
     jfieldID ad_id_field, ad_hamming_field, ad_c_field, ad_p_field;
 } state;
 
-JNIEXPORT jstring JNICALL
-Java_com_example_apriltagapp_MainActivity_stringFromJNI(
-        JNIEnv* env,
-        jobject jo) {
-    const char* hello = "Hello to HyeokSu and hhtboy";
-    return (*env)->NewStringUTF(env, hello);
-}
-
 JNIEXPORT void JNICALL
-Java_apriltag_ApriltagNative_native_1init_1new(
+Java_apriltag_ApriltagNative_apriltag_1native_1init(
         JNIEnv *env, jclass cls){
     // Just do method lookups once and cache the results
 
@@ -53,7 +43,8 @@ Java_apriltag_ApriltagNative_native_1init_1new(
                             "couldn't find ArrayList methods");
         return;
     }
-    // Get ApriltagDetection methods
+
+    // Get ApriltagDetection class
     jclass ad_cls = (*env)->FindClass(env, "apriltag/ApriltagDetection");
     if (!ad_cls) {
         __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
@@ -73,89 +64,24 @@ Java_apriltag_ApriltagNative_native_1init_1new(
     state.ad_hamming_field = (*env)->GetFieldID(env, ad_cls, "hamming", "I");
     state.ad_c_field = (*env)->GetFieldID(env, ad_cls, "c", "[D");
     state.ad_p_field = (*env)->GetFieldID(env, ad_cls, "p", "[D");
+
     if (!state.ad_id_field ||
         !state.ad_hamming_field ||
         !state.ad_c_field ||
         !state.ad_p_field) {
-//        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
-//                            "couldn't find ApriltagDetection fields");
-        return;
-    }
-}
-
-/*
- * Class:     edu_umich_eecs_april_apriltag_ApriltagNative
- * Method:    yuv_to_rgb
- * Signature: ([BIILandroid/graphics/Bitmap;)V
- */
-JNIEXPORT void JNICALL
-Java_apriltag_ApriltagNative_yuv_1to_1rgb(
-        JNIEnv *env, jclass cls, jbyteArray _src, jint width, jint height, jobject _dst){
-    // NV21 Format
-    // width*height    luma (Y) bytes followed by
-    // width*height/2  chroma (UV) bytes interleaved as V,U
-
-    jbyte *src = (*env)->GetByteArrayElements(env, _src, NULL);
-    jint *dst = NULL;
-    AndroidBitmap_lockPixels(env, _dst, &dst); // jnigraphics-lib도 링크 필요
-
-    if (!dst) {
         __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
-                            "couldn't lock bitmap");
+                            "couldn't find ApriltagDetection fields");
         return;
     }
-
-    AndroidBitmapInfo bmpinfo;
-    if (AndroidBitmap_getInfo(env, _dst, &bmpinfo) ||
-        bmpinfo.width*bmpinfo.height != width*height ||
-        bmpinfo.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        __android_log_print(ANDROID_LOG_ERROR, "apriltag_jni",
-                            "incorrect bitmap format: %d x %d  %d",
-                            bmpinfo.width, bmpinfo.height, bmpinfo.format);
-        return;
-    }
-
-    int uvstart = width * height;
-    for (int j = 0; j < height; j += 1) {
-        for (int i = 0; i < width; i += 1) {
-            int y = (unsigned char)src[j*width + i];
-            int offset = uvstart + (j >> 1)*width + (i & ~1);
-            int u = (unsigned char)src[offset + 1];
-            int v = (unsigned char)src[offset + 0];
-
-            y = y < 16 ? 16 : y;
-
-            int a0 = 1192 * (y - 16);
-            int a1 = 1634 * (v - 128);
-            int a2 = 832 * (v - 128);
-            int a3 = 400 * (u - 128);
-            int a4 = 2066 * (u - 128);
-
-            int r = (a0 + a1) >> 10;
-            int g = (a0 - a2 - a3) >> 10;
-            int b = (a0 + a4) >> 10;
-
-            r = r < 0 ? 0 : (r > 255 ? 255 : r);
-            g = g < 0 ? 0 : (g > 255 ? 255 : g);
-            b = b < 0 ? 0 : (b > 255 ? 255 : b);
-
-            // Output image in portrait orientation
-            dst[(i+1)*height - j-1] = 0xff000000 | (r << 16) | (g << 8) | b;
-        }
-    }
-
-    (*env)->ReleaseByteArrayElements(env, _src, src, 0);
-    AndroidBitmap_unlockPixels(env, _dst);
-
 }
 
 /*
- * Class:     edu_umich_eecs_april_apriltag_ApriltagNative
+ * Class:     Java_apriltag_ApriltagNative
  * Method:    apriltag_init
  * Signature: (Ljava/lang/String;IDDI)V
  */
 JNIEXPORT void JNICALL
-Java_apriltag_ApriltagNative_apriltag_1init_1new(
+Java_apriltag_ApriltagNative_apriltag_1init(
         JNIEnv *env, jclass cls, jstring _tfname, jint errorbits, jdouble decimate,
         jdouble sigma, jint nthreads) {
     // Do cleanup in case we're already initialized
@@ -177,16 +103,10 @@ Java_apriltag_ApriltagNative_apriltag_1init_1new(
     } else if (!strcmp(tfname, "tag36h10")) {
         state.tf = tag36h10_create();
         state.tf_destroy = tag36h10_destroy;
-    } /* else if (!strcmp(tfname, "tag36artoolkit")) {
-        state.tf = tag36artoolkit_create();
-        state.tf_destroy = tag36artoolkit_destroy;
-    }*/ else if (!strcmp(tfname, "tag25h9")) {
+    }  else if (!strcmp(tfname, "tag25h9")) {
         state.tf = tag25h9_create();
         state.tf_destroy = tag25h9_destroy;
-    } /*else if (!strcmp(tfname, "tag25h7")) {
-        state.tf = tag25h7_create();
-        state.tf_destroy = tag25h7_destroy;
-    }*/ else if (!strcmp(tfname, "tag16h5")) {
+    } else if (!strcmp(tfname, "tag16h5")) {
         state.tf = tag16h5_create();
         state.tf_destroy = tag16h5_destroy;
     } else if (!strcmp(tfname, "tagStandard41h12")) {
@@ -208,20 +128,20 @@ Java_apriltag_ApriltagNative_apriltag_1init_1new(
 }
 
 /*
- * Class:     edu_umich_eecs_april_apriltag_ApriltagNative
- * Method:    apriltag_detect_yuv
+ * Class:     Java_apriltag_ApriltagNative
+ * Method:    apriltag_detect
  * Signature: ([BII)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL
-Java_apriltag_ApriltagNative_apriltag_1detect_1yuv_1new(
+Java_apriltag_ApriltagNative_apriltag_1detect(
         JNIEnv *env, jclass cls, jbyteArray _buf, jint width, jint height){
     // If not initialized, init with default settings
     if (!state.td) {
-        state.tf = tag36h11_create();
+        state.tf = tagStandard41h12_create();
         state.td = apriltag_detector_create();
         apriltag_detector_add_family_bits(state.td, state.tf, 2);
-        state.td->quad_decimate = 2.0;
-        state.td->quad_sigma = 0.0;
+        state.td->quad_decimate = 4.0f;
+        state.td->quad_sigma = 0.0f;
         state.td->nthreads = 4;
         __android_log_write(ANDROID_LOG_INFO, "apriltag_jni",
                             "using default parameters");
@@ -268,30 +188,4 @@ Java_apriltag_ApriltagNative_apriltag_1detect_1yuv_1new(
     apriltag_detections_destroy(detections);
 
     return al;
-}
-
-JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative2_native_1init(JNIEnv *env, jclass clazz) {
-    // TODO: implement native_init()
-}
-
-JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative2_yuv_1to_1rgb(JNIEnv *env, jclass clazz, jbyteArray src,
-                                                          jint width, jint height, jobject dst) {
-    // TODO: implement yuv_to_rgb()
-}
-
-JNIEXPORT void JNICALL
-Java_com_example_apriltagapp_ApriltagNative2_apriltag_1init(JNIEnv *env, jclass clazz,
-                                                            jstring tag_family, jint error_bits,
-                                                            jdouble decimate_factor,
-                                                            jdouble blur_sigma, jint nthreads) {
-    // TODO: implement apriltag_init()
-}
-
-JNIEXPORT jobject JNICALL
-Java_com_example_apriltagapp_ApriltagNative2_apriltag_1detect_1yuv(JNIEnv *env, jclass clazz,
-                                                                   jbyteArray src, jint width,
-                                                                   jint height) {
-    // TODO: implement apriltag_detect_yuv()
 }
