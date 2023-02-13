@@ -52,9 +52,9 @@ class CameraViewModel : ViewModel() {
         if (currentTag.id == detection.id) {
             onPreviousTagArrival(detection)
         } else {
-            _isRunning.value = true
+            _isRunning.postValue(true)
             onNewTagArrival(detection)
-            _isRunning.value = false
+            _isRunning.postValue(false)
         }
     }
 
@@ -86,7 +86,7 @@ class CameraViewModel : ViewModel() {
         // 다음 Tag로 가기 위한 방향 설정
         for (tag in currentTag.linkedTags) {
             if (tag.id == nextTag.id) {
-                _direction.value = tag.direction
+                _direction.postValue(tag.direction)
                 println("새로운 태그 : ${currentTag.id} / 목적지 : ${nextTag.id} / direction : $direction / Spots : ${currentTag.spots}")
                 return
             }

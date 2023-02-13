@@ -93,7 +93,7 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     // 3D 포인터를 이미지 평면에 투영
     vector<cv::Point3f> obj_pts;
     for(int i = 0; i < len / 3; i++) {
-        obj_pts.emplace_back((float)jni_draw_array[3*i, (float)jni_draw_array[3*i + 1], (float)jni_draw_array[3*i + 2]);
+        obj_pts.emplace_back((float)jni_draw_array[3*i], (float)jni_draw_array[3*i + 1], (float)jni_draw_array[3*i + 2]);
     }
     projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
 
