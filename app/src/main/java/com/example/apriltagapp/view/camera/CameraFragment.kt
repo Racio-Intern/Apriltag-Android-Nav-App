@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.rotationMatrix
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -41,6 +42,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var state: Boolean = true
     private val TAG = "opencv"
     private lateinit var matInput: Mat
+    private lateinit var matResult: Mat
 
     //DEFAULT, LEFT, RIGHT, STRAIT, BACKWARDS;
     init{
@@ -133,9 +135,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         matInput = inputFrame.rgba()
-        aprilDetection = aprilDetection?.let{ detection ->
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.value?.ordinal ?: 0])
-            null
+
+        aprilDetection?.let{ detection ->
+            matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, matResult.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.value?.ordinal ?: 0])
+            aprilDetection = null
         }
 
         return matInput

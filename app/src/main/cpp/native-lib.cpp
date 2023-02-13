@@ -49,9 +49,11 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass clazz,
                                            jlong mat_addr_input,
+                                           jlong mat_addr_result,
                                            jdoubleArray arr,
                                            jdoubleArray drawArray) {
     Mat &matInput = *(Mat *)mat_addr_input;
+    Mat &matResult = *(Mat *)mat_addr_result;
     jdouble* jni_arr = (*env).GetDoubleArrayElements(arr, NULL);
     jdouble* jni_draw_array = (*env).GetDoubleArrayElements(drawArray, NULL);
     int len = (*env).GetArrayLength(drawArray);
@@ -104,6 +106,10 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     }
     polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 20);
 
+    string text = "Hello, apriltag";
+    rotate(matInput, matResult, ROTATE_90_CLOCKWISE);
+    putText(matResult, text, Point(300, 700), FONT_HERSHEY_COMPLEX, 1, Scalar(0.0, 0.0, 255.0), 3);
+    rotate(matResult, matInput, ROTATE_90_COUNTERCLOCKWISE);
     (*env).ReleaseDoubleArrayElements(arr, jni_arr, 0);
     (*env).ReleaseDoubleArrayElements(drawArray, jni_draw_array, 0);
 }
