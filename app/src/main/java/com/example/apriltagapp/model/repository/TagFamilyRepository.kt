@@ -58,4 +58,12 @@ class TagFamilyRepository() {
 
         }
     }
+
+    private fun printTagGraph(tagGraph: TagGraph) {
+        val map = tagGraph.tagFamily.tagMap
+        for(tag in map.values) {
+            println("${tag.id}태그의 linked tags : ${tag.linkedTags}")
+        }
+
+    }
 }
