@@ -73,6 +73,7 @@ class CameraViewModel : ViewModel() {
         // 목적지를 가기 위해 다음으로 가야하는 Tag 검색
         val nextTag: Tag = _tagGraph.value.shortestPath(detection.id, destTag.id) ?: run {
             Log.e(LOGTAG, "Error : Shortest path returns null")
+            direction = Direction.DEFAULT
             return
         }
 

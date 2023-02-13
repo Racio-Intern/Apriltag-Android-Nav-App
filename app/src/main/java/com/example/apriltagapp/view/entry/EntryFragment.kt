@@ -36,6 +36,10 @@ class EntryFragment : Fragment() {
         binding?.btnMap?.setOnClickListener {
             findNavController().navigate(R.id.action_entryFragment_to_mapFragment)
         }
+
+        binding?.btnSettings?.setOnClickListener {
+            findNavController().navigate(R.id.action_entryFragment_to_settingsFragment)
+        }
     }
 
     override fun onDestroy() {
