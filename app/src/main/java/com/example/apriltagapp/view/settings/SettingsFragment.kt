@@ -8,22 +8,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import apriltag.ApriltagNative
-import com.example.apriltagapp.R
-import com.example.apriltagapp.databinding.FragmentSearchBinding
 import com.example.apriltagapp.databinding.FragmentSettingsBinding
 
 
 class SettingsFragment : Fragment() {
     private var binding: FragmentSettingsBinding? = null
 
-    val deci: Array<String> = arrayOf("1", "1.5", "2", "3", "4")
-    val threads: Array<String> = arrayOf("0", "2", "4", "6", "8")
-    val tagFamilies: Array<String> = arrayOf("tag16h5" ,"tag25h9","tag36h10" ,"tag36h11",  "tagStandard41h12")
+    private val decimates: Array<String> = arrayOf("1.0", "1.5", "2.0", "3.0", "4.0")
+    private val threads: Array<String> = arrayOf("1", "2", "4", "6", "8")
+    private val tagFamilies: Array<String> = arrayOf("tag16h5" ,"tag25h9","tag36h10" ,"tag36h11",  "tagStandard41h12")
 
+    /** default value */
     var decimateFactor = 4.0
     var tagFamily = "tagStandard41h12"
     var thread = 1
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -35,15 +33,14 @@ class SettingsFragment : Fragment() {
             val builder =
                 AlertDialog.Builder(this.activity)
             builder.setTitle("Select Station").setItems(
-                deci
+                decimates
             ) { _, which ->
                 Toast.makeText(
                     this.activity,
-                    "",
+                    "decimateFactor로 ${decimates[which]}가 선택되었습니다.",
                     Toast.LENGTH_SHORT
                 ).show()
-                decimateFactor = deci[which].toDouble()
-
+                decimateFactor = decimates[which].toDouble()
                 ApriltagNative.apriltag_init(tagFamily, 2, decimateFactor, 0.0, thread)
             }.show()
 
@@ -58,7 +55,7 @@ class SettingsFragment : Fragment() {
             ) { _, which ->
                 Toast.makeText(
                     this.activity,
-                    "",
+                    "${threads[which]}개 thread가 사용됩니다.",
                     Toast.LENGTH_SHORT
                 ).show()
                 thread = threads[which].toInt()
@@ -75,7 +72,7 @@ class SettingsFragment : Fragment() {
             ) { _, which ->
                 Toast.makeText(
                     this.activity,
-                    "",
+                    "${tagFamilies[which]} family가 선택되었습니다.",
                     Toast.LENGTH_SHORT
                 ).show()
                 tagFamily = tagFamilies[which]
