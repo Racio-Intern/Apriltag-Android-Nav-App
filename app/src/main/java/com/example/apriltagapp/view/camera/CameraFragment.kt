@@ -149,9 +149,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         matInput = inputFrame.rgba()
 
         aprilDetection?.let{ detection ->
-            matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
-            OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
+            //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
+            //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
+            //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
+            val a = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p);
+            println("----- ${a.toList()}")
             aprilDetection = null
         }
 
