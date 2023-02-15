@@ -7,13 +7,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import apriltag.ApriltagDetection
 import com.example.apriltagapp.model.*
+import com.example.apriltagapp.model.baseModel.UserCamera
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
 import kotlinx.coroutines.launch
+import kotlin.math.*
 
 class CameraViewModel : ViewModel() {
     private val LOGTAG = "CameraViewModel"
+    private val userCamera = UserCamera()
 
     private val _isRunning = MutableLiveData<Boolean>(false)
 
@@ -42,7 +45,7 @@ class CameraViewModel : ViewModel() {
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
-    fun onDetect(detection: ApriltagDetection) {
+    fun onDetect(detection: ApriltagDetection, estPosMatrix: DoubleArray) {
         if(destTag.id < 0) {
             Log.e(LOGTAG, "Error : 목적지가 비정상적입니다 ")
             return
@@ -54,6 +57,10 @@ class CameraViewModel : ViewModel() {
             onNewTagArrival(detection)
             _isRunning.postValue(false)
         }
+
+        val cameraPos = estimateCameraPos(estPosMatrix[3], estPosMatrix[4], estPosMatrix[5])
+        println("카메라 위치 : x = ${cameraPos.first}, y = ${cameraPos.second}")
+
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
@@ -102,5 +109,16 @@ class CameraViewModel : ViewModel() {
 
     private fun sendInitialQuery() {
 
+    }
+
+    private fun estimateCameraPos(x: Double, y: Double, z: Double): Pair<Double, Double> {
+        val distance = hypot(y, z)
+        val theta = atan2(y, z) - currentTag.rot
+        println("theta : $theta")
+
+
+        val camPosX = currentTag.x + distance * sin(theta)
+        val camPosY = currentTag.y + distance * cos(theta)
+        return Pair(camPosX, camPosY)
     }
 }
