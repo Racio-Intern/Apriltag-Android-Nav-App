@@ -9,6 +9,10 @@ data class Tag(
     /** 태그가 담고 있는 장소 */
     val spots: MutableList<Spot> = mutableListOf()
 
+    var x: Double = 0.0
+    var y: Double = 0.0
+    var rot: Double = 0.0
+
     fun addSpot(spot: Spot) {
         spots.add(spot)
     }//
