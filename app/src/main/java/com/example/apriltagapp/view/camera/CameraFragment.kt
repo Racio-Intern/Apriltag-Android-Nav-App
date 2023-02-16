@@ -46,6 +46,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private val TAG = "opencv"
     private lateinit var matInput: Mat
     private lateinit var matResult: Mat
+    private lateinit var cameraMatrixData: DoubleArray
 
     private var estPosMatrix = doubleArrayOf()
 
@@ -138,9 +139,16 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         binding = null
     }
 
-
-
     override fun onCameraViewStarted(width: Int, height: Int) {
+    }
+
+    override fun onCameraViewStarted(width: Int, height: Int, focalLength: Double) {
+        println("in fragment-> width : $width, height: $height, focalLength : $focalLength")
+        cameraMatrixData = doubleArrayOf(
+            focalLength, 0.0, width / 2.0,
+            0.0, focalLength, height / 2.0,
+            0.0, 0.0, 1.0
+        )
     }
 
     override fun onCameraViewStopped() {
@@ -152,10 +160,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
         aprilDetection?.let{ detection ->
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
-            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
+            //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
-            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p) // rx, ry, rz, tx, ty, tz
-            viewModel.onCameraFrame(estPosMatrix)
+            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             aprilDetection = null
         }
 

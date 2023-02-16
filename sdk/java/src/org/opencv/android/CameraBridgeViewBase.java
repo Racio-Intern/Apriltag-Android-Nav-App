@@ -57,6 +57,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     protected boolean mEnabled;
     protected boolean mCameraPermissionGranted = false;
     protected FpsMeter mFpsMeter = null;
+    protected double focalLength;
 
     public static final int CAMERA_ID_ANY   = -1;
     public static final int CAMERA_ID_BACK  = 99;
@@ -175,6 +176,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
          */
         public void onCameraViewStarted(int width, int height);
 
+        public void onCameraViewStarted(int width, int height, double focalLengths);
+
         /**
          * This method is invoked when camera preview has been stopped for some reason.
          * No frames will be delivered via onCameraFrame() callback after this method is called.
@@ -195,6 +198,11 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         }
 
         public void onCameraViewStarted(int width, int height) {
+            mOldStyleListener.onCameraViewStarted(width, height);
+        }
+
+        @Override
+        public void onCameraViewStarted(int width, int height, double focalLength) {
             mOldStyleListener.onCameraViewStarted(width, height);
         }
 
@@ -389,6 +397,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
                 onEnterStartedState();
                 if (mListener != null) {
                     mListener.onCameraViewStarted(mFrameWidth, mFrameHeight);
+                    mListener.onCameraViewStarted(mFrameWidth, mFrameHeight, focalLength);
                 }
                 break;
             case STOPPED:
