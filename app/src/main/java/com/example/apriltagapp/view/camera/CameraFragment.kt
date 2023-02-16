@@ -152,10 +152,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
         aprilDetection?.let{ detection ->
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
-            //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
+            OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
-//            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p) // rx, ry, rz, tx, ty, tz
-//            println("----- ${estPosMatrix.toList()}")
+            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p) // rx, ry, rz, tx, ty, tz
+            viewModel.onCameraFrame(estPosMatrix)
             aprilDetection = null
         }
 
@@ -222,8 +222,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onTagDetect(aprilDetection: ApriltagDetection) {
         this.aprilDetection = aprilDetection
         if(state) {
-            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, aprilDetection.p) // rx, ry, rz, tx, ty, tz
-            viewModel.onDetect(aprilDetection, estPosMatrix)
+            viewModel.onDetect(aprilDetection)
         }
     }
 
