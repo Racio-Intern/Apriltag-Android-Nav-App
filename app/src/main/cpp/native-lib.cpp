@@ -1,6 +1,14 @@
 #include "opencv2/opencv.hpp"
 #include <jni.h>
 #include <android/log.h>
+#include <camera_params.h>
+
+//    Number of input points must be 4. Object points must be defined in the following order:
+//    - point 0: [-squareLength / 2,  squareLength / 2, 0]
+//    - point 1: [ squareLength / 2,  squareLength / 2, 0]
+//    - point 2: [ squareLength / 2, -squareLength / 2, 0]
+//    - point 3: [-squareLength / 2, -squareLength / 2, 0]
+#define SQUARE_LENGTH 1.0f
 
 using namespace cv;
 using namespace std;
@@ -56,33 +64,20 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     jdouble* jni_draw_array = (*env).GetDoubleArrayElements(drawArray, NULL);
     int len = (*env).GetArrayLength(drawArray);
 
-    /*
-    cameraMatrix : (3 x 3)   fx, 0,  cx
-                             0,  fy, cy
-                             0,  0,  1
-    */
-    double data[9] = { 3156.71852, 0, 359.097908,
-                       0, 3129.52242, 239.736909,
-                       0, 0, 1};
-    Mat cameraM = Mat(3, 3, CV_64FC1, data);
+    Mat cameraM = Mat(3, 3, CV_64FC1, camera_matrix_data);
     Mat distortionC = Mat::zeros(5, 1, CV_64FC1); // 왜곡 계수
+
     vector<Point2f> imagePoint;
     imagePoint.emplace_back((float) jni_arr[0], (float)jni_arr[1]);
     imagePoint.emplace_back((float) jni_arr[2], (float)jni_arr[3]);
     imagePoint.emplace_back((float) jni_arr[4], (float)jni_arr[5]);
     imagePoint.emplace_back((float) jni_arr[6], (float)jni_arr[7]);
 
-//    Number of input points must be 4. Object points must be defined in the following order:
-//    - point 0: [-squareLength / 2,  squareLength / 2, 0]
-//    - point 1: [ squareLength / 2,  squareLength / 2, 0]
-//    - point 2: [ squareLength / 2, -squareLength / 2, 0]
-//    - point 3: [-squareLength / 2, -squareLength / 2, 0]
     vector<Point3f> objectPoint;
-    const float squareLength = 1.0f;
-    objectPoint.emplace_back(-squareLength/2, squareLength / 2, 0);
-    objectPoint.emplace_back(squareLength/2, squareLength / 2, 0);
-    objectPoint.emplace_back(squareLength/2, -squareLength / 2, 0);
-    objectPoint.emplace_back(-squareLength/2, -squareLength / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
 
     // 카메라 rotation과 translation 벡터 찾기
     // @ref SOLVEPNP_IPPE_SQUARE this is a special case suitable for marker pose estimation.
@@ -130,20 +125,14 @@ extern "C"
 JNIEXPORT jdoubleArray JNICALL
 Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jclass clazz,
                                                                 jlong mat_addr_input,
-                                                                jdoubleArray arr) {
+                                                                jdoubleArray arr,
+                                                                jdoubleArray camera_matrix_data) {
 
     Mat &matInput = *(Mat *)mat_addr_input;
     jdouble* jni_arr = (*env).GetDoubleArrayElements(arr, NULL);
+    jdouble* jni_cameraM_data = (*env).GetDoubleArrayElements(camera_matrix_data, NULL);
 
-    /*
-    cameraMatrix : (3 x 3)   fx, 0,  cx
-                             0,  fy, cy
-                             0,  0,  1
-    */
-    double data[9] = { 3156.71852, 0, 359.097908,
-                       0, 3129.52242, 239.736909,
-                       0, 0, 1};
-    Mat cameraM = Mat(3, 3, CV_64FC1, data);
+    Mat cameraM = Mat(3, 3, CV_64FC1, jni_cameraM_data);
     Mat distortionC = Mat::zeros(5, 1, CV_64FC1); // 왜곡 계수
 
     vector<Point2f> imagePoint;
@@ -154,23 +143,22 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
 
     vector<Point3f> objectPoint;
     const float squareLength = 1.0f;
-    objectPoint.emplace_back(-squareLength/2, squareLength / 2, 0);
-    objectPoint.emplace_back(squareLength/2, squareLength / 2, 0);
-    objectPoint.emplace_back(squareLength/2, -squareLength / 2, 0);
-    objectPoint.emplace_back(-squareLength/2, -squareLength / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
 
     // 카메라 rotation과 translation 벡터 찾기
     // @ref SOLVEPNP_IPPE_SQUARE this is a special case suitable for marker pose estimation.
     Mat rvecs, tvecs; // 카메라 rotation, translation
     solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
-    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
-                        "%d, %d , tvecs: %d %d", rvecs.rows, rvecs.cols, tvecs.rows, tvecs.cols );
+
     // 3D 포인터를 이미지 평면에 투영
     vector<cv::Point3f> obj_pts;
-    obj_pts.emplace_back(-squareLength/2, squareLength / 2, 0);
-    obj_pts.emplace_back(squareLength/2, squareLength / 2, 0);
-    obj_pts.emplace_back(squareLength/2, -squareLength / 2, 0);
-    obj_pts.emplace_back(-squareLength/2, -squareLength / 2, 0);
+    obj_pts.emplace_back(-SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(-SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
 
     projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
 
@@ -182,19 +170,21 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
     polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 2);
 
     (*env).ReleaseDoubleArrayElements(arr, jni_arr, 0);
+    (*env).ReleaseDoubleArrayElements(camera_matrix_data, jni_cameraM_data, 0);
 
-    double rvecs_arr[3] = {0};
-    double tvecs_arr[3] = {0};
+    Mat rt;
+    Rodrigues(rvecs, rt);
+    Mat r = rt.inv();
+    Mat pos = -r * tvecs;
 
-    for(int i = 0; i < 3; i++){
-        rvecs_arr[i] = rvecs.at<double>(i, 0);
-        tvecs_arr[i] = tvecs.at<double>(i, 0);
-    }
 
-    jdoubleArray mat_arr = (*env).NewDoubleArray(6);
+    double* p = (double *)pos.data;
+    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
+                        "%f %f %f", p[0], p[1], p[2]);
 
-    (*env).SetDoubleArrayRegion(mat_arr, 0, 3, rvecs_arr);
-    (*env).SetDoubleArrayRegion(mat_arr, 3, 3, tvecs_arr);
+    jdoubleArray mat_arr = (*env).NewDoubleArray(3);
+
+    (*env).SetDoubleArrayRegion(mat_arr, 0, 3, p);
 
     return mat_arr;
 }

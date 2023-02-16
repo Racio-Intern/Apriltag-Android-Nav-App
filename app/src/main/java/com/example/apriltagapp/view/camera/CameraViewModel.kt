@@ -58,8 +58,8 @@ class CameraViewModel : ViewModel() {
             _isRunning.postValue(false)
         }
 
-        val cameraPos = estimateCameraPos(estPosMatrix[3], estPosMatrix[4], estPosMatrix[5])
-        println("카메라 위치 : x = ${cameraPos.first}, y = ${cameraPos.second}")
+        //val cameraPos = estimateCameraPos(estPosMatrix[3], estPosMatrix[4], estPosMatrix[5])
+        //println("카메라 위치 : x = ${cameraPos.first}, y = ${cameraPos.second}")
 
     }
 
@@ -112,8 +112,8 @@ class CameraViewModel : ViewModel() {
     }
 
     private fun estimateCameraPos(x: Double, y: Double, z: Double): Pair<Double, Double> {
-        val distance = hypot(y, z)
-        val theta = atan2(y, z) - currentTag.rot
+        val distance = hypot(y, z) // root(y^2 + z^2)
+        val theta = atan2(y, z) - currentTag.rot // 역 탄젠트
         println("theta : $theta")
 
 

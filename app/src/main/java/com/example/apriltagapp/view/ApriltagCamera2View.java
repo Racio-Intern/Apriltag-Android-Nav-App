@@ -38,6 +38,7 @@ import apriltag.ApriltagNative;
 public class ApriltagCamera2View extends CameraBridgeViewBase {
 
     private ArrayList<ApriltagDetection> mDetections;
+    protected double focalLengthPixels = 1000.0;
 
     private static final String LOGTAG = "JavaCamera2View";
 
@@ -292,6 +293,12 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
             org.opencv.core.Size frameSize = calculateCameraFrameSize(sizes_list, new JavaCamera2View.JavaCameraSizeAccessor(), width, height);
             Log.i(LOGTAG, "Selected preview size to " + Integer.valueOf((int)frameSize.width) + "x" + Integer.valueOf((int)frameSize.height));
             assert(!(frameSize.width == 0 || frameSize.height == 0));
+
+            // Sensor Width of the camera in millimeters.
+            float focalLengthMm = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+            float sensorWidthMm = characteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE).getWidth();
+            focalLengthPixels = frameSize.width * focalLengthMm / sensorWidthMm;
+
             if (mPreviewSize.getWidth() == frameSize.width && mPreviewSize.getHeight() == frameSize.height)
                 return false;
             else {
@@ -317,6 +324,7 @@ public class ApriltagCamera2View extends CameraBridgeViewBase {
             boolean needReconfig = calcPreviewSize(width, height);
             mFrameWidth = mPreviewSize.getWidth();
             mFrameHeight = mPreviewSize.getHeight();
+            focalLength = focalLengthPixels;
 
             if ((getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT) && (getLayoutParams().height == ViewGroup.LayoutParams.MATCH_PARENT))
                 mScale = Math.min(((float)height)/mFrameHeight, ((float)width)/mFrameWidth);
