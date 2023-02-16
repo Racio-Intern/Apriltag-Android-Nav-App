@@ -178,8 +178,8 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
 
 
     double* p = (double *)pos.data;
-//    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
-//                        "%f %f %f", p[0], p[1], p[2]);
+    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
+                        "%f %f %f", p[0], p[1], p[2]);
 
     jdoubleArray mat_arr = (*env).NewDoubleArray(3);
 
