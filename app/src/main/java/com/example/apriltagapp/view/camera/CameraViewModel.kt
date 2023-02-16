@@ -45,7 +45,7 @@ class CameraViewModel : ViewModel() {
     }
 
     /** renderer가 detection을 했을 때 호출하는 함수입니다. */
-    fun onDetect(detection: ApriltagDetection, estPosMatrix: DoubleArray) {
+    fun onDetect(detection: ApriltagDetection) {
         if(destTag.id < 0) {
             Log.e(LOGTAG, "Error : 목적지가 비정상적입니다 ")
             return
@@ -58,9 +58,13 @@ class CameraViewModel : ViewModel() {
             _isRunning.postValue(false)
         }
 
-        //val cameraPos = estimateCameraPos(estPosMatrix[3], estPosMatrix[4], estPosMatrix[5])
-        //println("카메라 위치 : x = ${cameraPos.first}, y = ${cameraPos.second}")
+//        println("${estPosMatrix[0]}, ${estPosMatrix[1]}, ${estPosMatrix[2]}")
 
+    }
+
+    fun onCameraFrame(estPosMat: DoubleArray) {
+        val cameraPos = estimateCameraPos(estPosMat[0], estPosMat[1], estPosMat[2])
+        println("camera pos : ${cameraPos.first} / ${cameraPos.second}")
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */
@@ -112,13 +116,17 @@ class CameraViewModel : ViewModel() {
     }
 
     private fun estimateCameraPos(x: Double, y: Double, z: Double): Pair<Double, Double> {
-        val distance = hypot(y, z) // root(y^2 + z^2)
-        val theta = atan2(y, z) - currentTag.rot // 역 탄젠트
-        println("theta : $theta")
+
+        val distance = hypot(x, z)
+        val theta = atan(z / x) - currentTag.rot
+//        println(" x / y / z :$x / $y / $z")
+//        println("theta : ${theta / PI}ㅠ")
 
 
-        val camPosX = currentTag.x + distance * sin(theta)
-        val camPosY = currentTag.y + distance * cos(theta)
+        val cos = if(theta > 0) cos(theta) else -cos(theta)
+        val sin = if(theta > 0) sin(theta) else -sin(theta)
+        val camPosX = currentTag.x + distance * cos
+        val camPosY = currentTag.y + distance * sin
         return Pair(camPosX, camPosY)
     }
 }

@@ -83,8 +83,8 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     // @ref SOLVEPNP_IPPE_SQUARE this is a special case suitable for marker pose estimation.
     Mat rvecs, tvecs; // 카메라 rotation, translation
     solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
-    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni","rotation : %f %f %f", rvecs.at<double>(0,0), rvecs.at<double>(1,0),rvecs.at<double>(2,0));
-    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni","translation : %f %f %f", tvecs.at<double>(0,0), tvecs.at<double>(1,0),tvecs.at<double>(2,0));
+//    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni","rotation : %f %f %f", rvecs.at<double>(0,0), rvecs.at<double>(1,0),rvecs.at<double>(2,0));
+//    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni","translation : %f %f %f", tvecs.at<double>(0,0), tvecs.at<double>(1,0),tvecs.at<double>(2,0));
 
     // 3D 포인터를 이미지 평면에 투영
     vector<cv::Point3f> obj_pts;
@@ -142,7 +142,6 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
     imagePoint.emplace_back((float) jni_arr[6], (float)jni_arr[7]);
 
     vector<Point3f> objectPoint;
-    const float squareLength = 1.0f;
     objectPoint.emplace_back(-SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
     objectPoint.emplace_back(SQUARE_LENGTH/2, SQUARE_LENGTH / 2, 0);
     objectPoint.emplace_back(SQUARE_LENGTH/2, -SQUARE_LENGTH / 2, 0);
@@ -179,8 +178,8 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
 
 
     double* p = (double *)pos.data;
-    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
-                        "%f %f %f", p[0], p[1], p[2]);
+//    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni",
+//                        "%f %f %f", p[0], p[1], p[2]);
 
     jdoubleArray mat_arr = (*env).NewDoubleArray(3);
 
