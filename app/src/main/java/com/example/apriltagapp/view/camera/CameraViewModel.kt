@@ -11,12 +11,17 @@ import com.example.apriltagapp.model.baseModel.UserCamera
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.*
 
 class CameraViewModel : ViewModel() {
     private val LOGTAG = "CameraViewModel"
-    private val userCamera = UserCamera()
+    private val _userCamera = MutableLiveData<UserCamera>()
+    val userCamera: LiveData<UserCamera>
+        get() = _userCamera
 
     private val _isRunning = MutableLiveData<Boolean>(false)
 
@@ -36,6 +41,20 @@ class CameraViewModel : ViewModel() {
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
+
+        var count = 0
+        CoroutineScope(Dispatchers.IO).launch {
+            var x = 0.0
+            var y = 0.0
+            var r = 0.0
+            while(count < 1000) {
+                count ++
+                x += 10
+                y += 10
+                _userCamera.postValue(UserCamera(x, y, r))
+                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+            }
+        }
     }
 
     fun onSpotsObserved(receivedTagId: Int) {
