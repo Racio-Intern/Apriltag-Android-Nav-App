@@ -52,7 +52,7 @@ class CameraViewModel : ViewModel() {
                 x += 10
                 y += 10
                 _userCamera.postValue(UserCamera(x, y, r))
-                delay(20)
+                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
             }
         }
     }
