@@ -4,6 +4,8 @@ package com.example.apriltagapp.view.camera
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -26,14 +28,14 @@ import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.search.SearchFragment
+import kotlinx.coroutines.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import kotlin.time.ExperimentalTime
-import kotlin.time.TimedValue
-import kotlin.time.measureTimedValue
+
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
@@ -43,10 +45,13 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var aprilDetection: ApriltagDetection? = null
     private var mOpenCvCameraView: ApriltagCamera2View? = null
     private var state: Boolean = true
-    private val TAG = "opencv"
     private lateinit var matInput: Mat
     private lateinit var matResult: Mat
     private lateinit var cameraMatrixData: DoubleArray
+
+    //map 관련 변수
+    private var camPosX = 0
+    private var camPosY = 0
 
     private var estPosMatrix = doubleArrayOf()
 
@@ -72,6 +77,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         coordnateArray[3] = arrowForwardCoords
         coordnateArray[4] = arrowBackwardCoords
     }
+
 
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(context) {
         override fun onManagerConnected(status: Int) {
@@ -110,6 +116,31 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
         viewModel.isRunning.observe(viewLifecycleOwner){
             state = it != true
+        }
+
+        viewModel.userCamera.observe(viewLifecycleOwner) { cam->
+            camPosX = cam.uiCoordsPos().first
+            camPosY = cam.uiCoordsPos().second
+        }
+
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.map)
+        var mBitmap = Bitmap.createBitmap(bitmap!!, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
+
+        binding?.viewImg?.setImageBitmap(mBitmap)
+        binding?.viewImg?.bringToFront()
+        binding?.imgDot?.bringToFront()
+
+        //livedata를 보고 바로 좌표를 변경해도 되지만 자연스러운 연출과 일정한 프레임을 위해 코루틴 쓰레드에서 돌립니다.
+        CoroutineScope(Dispatchers.Main).launch {
+            while(true) {
+                // 카메라의 좌표가 bitmap 크기를 벗어나면 무시합니다.
+                if((camPosX + MINIMAP_SIZE > bitmap.width) || (camPosY + MINIMAP_SIZE > bitmap.height)){
+                    continue
+                }
+                mBitmap = Bitmap.createBitmap(bitmap, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
+                binding?.viewImg?.setImageBitmap(mBitmap!!)
+                delay((1000 / FPS).toLong()) // delay(ms) = 1000ms / FPS
+            }
         }
 
         return binding?.root
@@ -163,6 +194,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
             estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
+            viewModel.onCameraFrame(estPosMatrix)
             aprilDetection = null
         }
 
@@ -234,6 +266,12 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     companion object{
+        private val TAG = "opencv"
+
+        //minimap 관련 const 변수
+        const val MINIMAP_SIZE = 1000
+        const val FPS = 50
+
         // points(x, y, z)
         val defaultCoords = arrayOf(
             0.5, 0.5, 0.0,
