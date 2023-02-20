@@ -19,7 +19,7 @@ import kotlin.math.*
 
 class CameraViewModel : ViewModel() {
     private val LOGTAG = "CameraViewModel"
-    private val _userCamera = MutableLiveData<UserCamera>()
+    private val _userCamera = MutableLiveData<UserCamera>(UserCamera(3800.0, 2900.0, 0.0))
     val userCamera: LiveData<UserCamera>
         get() = _userCamera
 
@@ -47,17 +47,45 @@ class CameraViewModel : ViewModel() {
         tagFamilyRepository.observeTagFamily(_tagGraph)
 
         var count = 0
+
+
         CoroutineScope(Dispatchers.IO).launch {
-            var x = 0.0
-            var y = 0.0
-            var r = 0.0
-            while(count < 1000) {
+            var x = 2400.0
+            var y = 2200.0
+
+            var destX = 1700.0 // 1900
+            var destY = 1900.0 // 1300
+
+            var unit = 100.0 / 100
+
+            var r = 90 - atan((3/7).toDouble()) * UserCamera.RAD2DEG - 20
+            while(count < 100) {
                 count ++
-                x += 10
-                y += 10
+                x += -7 * unit
+                y += -3 * unit
+//                r -= 0.5
                 _userCamera.postValue(UserCamera(x, y, r))
                 delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
             }
+            count = 0
+
+            while(count < 90) {
+                count ++
+                r -= 1
+                _userCamera.postValue(UserCamera(x, y, r))
+                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+            }
+
+            count = 0
+            unit = 100.0 / 100
+            while(count < 100) {
+                count ++
+                x += 2.5 * unit
+                y += -7.5 * unit
+                _userCamera.postValue(UserCamera(x, y, r))
+                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+            }
+
         }
     }
 
