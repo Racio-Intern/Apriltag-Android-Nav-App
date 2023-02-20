@@ -6,6 +6,7 @@ import android.annotation.TargetApi
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -27,14 +28,16 @@ import apriltag.OpenCVNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
+import com.example.apriltagapp.model.baseModel.UserCamera
+import com.example.apriltagapp.utility.BitmapController
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.search.SearchFragment
-import kotlinx.coroutines.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
+import kotlin.system.measureTimeMillis
 import kotlin.time.ExperimentalTime
 
 
@@ -55,6 +58,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     //map 관련 변수
     private var camPosX = 0
     private var camPosY = 0
+    private val bitmapController = BitmapController()
 
     private val permissionList = Manifest.permission.CAMERA
 
@@ -124,23 +128,35 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
         }
 
-        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.map)
-        var mBitmap = Bitmap.createBitmap(bitmap!!, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
+        val map = BitmapFactory.decodeResource(resources, R.drawable.test)
+        println("map size : ${map.width}, ${map.height}")
 
         viewModel.userCamera.observe(viewLifecycleOwner) { cam ->
-            camPosX = cam.uiCoordsPos().first
-            camPosY = cam.uiCoordsPos().second
-//             카메라의 좌표가 bitmap 크기를 벗어나면 무시합니다.
-            if ((camPosX + MINIMAP_SIZE > bitmap.width) || (camPosY + MINIMAP_SIZE > bitmap.height)) {
-                println("camera 좌표가 bitmap 사이즈를 초과했습니다")
-            } else {
-                mBitmap = Bitmap.createBitmap(bitmap, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
-                binding?.viewImg?.setImageBitmap(mBitmap!!)
+            camPosX = cam.getUICoords().first
+            camPosY = cam.getUICoords().second
+
+//             카메라의 좌표가 bitmap 크기를 벗어나는지 확인합니다.
+            try {
+                val croppedArea = bitmapController.cropSquareArea(map, camPosX - MINIMAP_SIZE, camPosY - MINIMAP_SIZE, 2 * MINIMAP_SIZE)
+                    ?: throw RuntimeException("crop square area returns null")
+
+                val rotatedArea = bitmapController.rotateImage(croppedArea, cam.rotRad.toFloat())
+
+                val finalArea = bitmapController.cropSquareArea(
+                    rotatedArea,
+                    (rotatedArea.width - MINIMAP_SIZE) / 2,
+                    (rotatedArea.height - MINIMAP_SIZE) / 2,
+                    MINIMAP_SIZE
+                )
+
+                binding?.viewImg?.setImageBitmap(finalArea)
+            } catch (e: RuntimeException) {
+                Log.e(TAG, "bitmap runtime error")
             }
         }
 
-        binding?.viewImg?.setImageBitmap(mBitmap)
         binding?.viewImg?.bringToFront()
+        binding?.imgDot?.setImageResource(R.drawable.red_dot)
         binding?.imgDot?.bringToFront()
 
         return binding?.root
@@ -271,11 +287,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     companion object {
-        private val TAG = "opencv"
+        private const val TAG = "CameraFragment"
 
         //minimap 관련 const 변수
-        const val MINIMAP_SIZE = 1000
-        const val FPS = 50
+        const val MINIMAP_SIZE = 400
+        const val FPS = 15
 
         // points(x, y, z)
         val defaultCoords = arrayOf(
