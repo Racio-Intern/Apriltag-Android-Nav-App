@@ -23,6 +23,10 @@ class CameraViewModel : ViewModel() {
     val isRunning: LiveData<Boolean>
         get() = _isRunning
 
+    private val _estimatedPos = MutableLiveData<Pair<Double, Double>>(Pair(0.0, 0.0))
+    val estimatedPos: LiveData<Pair<Double, Double>>
+        get() = _estimatedPos
+
 
     var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
@@ -63,8 +67,8 @@ class CameraViewModel : ViewModel() {
     }
 
     fun onCameraFrame(estPosMat: DoubleArray) {
-        val cameraPos = estimateCameraPos(estPosMat[0], estPosMat[1], estPosMat[2])
-        println("camera pos : ${cameraPos.first} / ${cameraPos.second}")
+        _estimatedPos.postValue(estimateCameraPos(estPosMat[0], estPosMat[1], estPosMat[2]))
+        //Log.d(LOGTAG, "camera pos : ${cameraPos.first} / ${cameraPos.second}")
     }
 
     /** 기존 tag와 새 tag가 일치할 때 호출하는 함수입니다. 수정된 좌표만 넘겨줍니다 */

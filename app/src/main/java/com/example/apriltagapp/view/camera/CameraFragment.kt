@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.SurfaceView
 import android.view.View
@@ -31,9 +32,6 @@ import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import kotlin.time.ExperimentalTime
-import kotlin.time.TimedValue
-import kotlin.time.measureTimedValue
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
@@ -47,8 +45,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private lateinit var matInput: Mat
     private lateinit var matResult: Mat
     private lateinit var cameraMatrixData: DoubleArray
+    private var mSize: Size = Size(-1, -1)
 
-    private var estPosMatrix = doubleArrayOf()
+    private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
 
     private val permissionList = Manifest.permission.CAMERA
 
@@ -112,6 +111,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             state = it != true
         }
 
+        viewModel.estimatedPos.observe(viewLifecycleOwner){
+            binding?.relativeCoorTxt?.text = "x : ${estPosMatrix[0]}\ny : ${estPosMatrix[1]}\nz : ${estPosMatrix[2]}"
+            binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
+        }
+
         return binding?.root
     }
 
@@ -143,7 +147,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     override fun onCameraViewStarted(width: Int, height: Int, focalLength: Double) {
-        println("in fragment-> width : $width, height: $height, focalLength : $focalLength")
+        mSize = Size(width, height)
         cameraMatrixData = doubleArrayOf(
             focalLength, 0.0, width / 2.0,
             0.0, focalLength, height / 2.0,
@@ -154,7 +158,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraViewStopped() {
     }
 
-    @OptIn(ExperimentalTime::class)
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         matInput = inputFrame.rgba()
 
@@ -163,6 +166,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
             estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
+            viewModel.onCameraFrame(estPosMatrix)
+            //val sizeArr = intArrayOf(mSize.width, mSize.height)
+            //OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, sizeArr)
             aprilDetection = null
         }
 
