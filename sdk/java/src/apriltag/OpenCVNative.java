@@ -11,4 +11,6 @@ public class OpenCVNative {
     public static native void put_text(long matAddrInput, long matAddrOutput, int[] arr);
 
     public static native double[] apriltag_detect_and_pos_estimate(long matAddrInput, double[] arr, double[] cameraMatrixData);
+
+    public static native void calibrateCamera(long matAddrInput, double[] arr, int[] imageSize);
 }
