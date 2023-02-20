@@ -128,7 +128,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
         }
 
-        val map = BitmapFactory.decodeResource(resources, R.drawable.test)
+        val option = BitmapFactory.Options()
+        option.inScaled = false
+        option.inSampleSize = 2
+        val map = BitmapFactory.decodeResource(resources, R.drawable.test, option)
+
         println("map size : ${map.width}, ${map.height}")
 
         viewModel.userCamera.observe(viewLifecycleOwner) { cam ->
@@ -290,7 +294,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         private const val TAG = "CameraFragment"
 
         //minimap 관련 const 변수
-        const val MINIMAP_SIZE = 400
+        const val MINIMAP_SIZE = 100
         const val FPS = 15
 
         // points(x, y, z)

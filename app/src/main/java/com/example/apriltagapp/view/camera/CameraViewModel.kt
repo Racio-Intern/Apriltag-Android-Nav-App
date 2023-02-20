@@ -50,16 +50,16 @@ class CameraViewModel : ViewModel() {
 
 
         CoroutineScope(Dispatchers.IO).launch {
-            var x = 2400.0
-            var y = 2200.0
+            var x = 500.0
+            var y = 500.0
 
             var destX = 1700.0 // 1900
             var destY = 1900.0 // 1300
 
-            var unit = 100.0 / 100
+            var unit = 100.0 / 200
 
             var r = 90 - atan((3/7).toDouble()) * UserCamera.RAD2DEG - 20
-            while(count < 100) {
+            while(count < 50) {
                 count ++
                 x += -7 * unit
                 y += -3 * unit
@@ -77,8 +77,7 @@ class CameraViewModel : ViewModel() {
             }
 
             count = 0
-            unit = 100.0 / 100
-            while(count < 100) {
+            while(count < 50) {
                 count ++
                 x += 2.5 * unit
                 y += -7.5 * unit
@@ -153,17 +152,11 @@ class CameraViewModel : ViewModel() {
         direction = Direction.DEFAULT
     }
 
-    private fun createShape() {
-    }
 
     private fun postTag(tag: Tag) {
         viewModelScope.launch {
             tagFamilyRepository.postTag(tag)
         }
-    }
-
-    private fun sendInitialQuery() {
-
     }
 
     private fun estimateCameraPos(x: Double, y: Double, z: Double): Pair<Double, Double> {
