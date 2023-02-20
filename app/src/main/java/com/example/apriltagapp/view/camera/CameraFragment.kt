@@ -4,6 +4,8 @@ package com.example.apriltagapp.view.camera
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -27,11 +29,14 @@ import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.search.SearchFragment
+import kotlinx.coroutines.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
+import kotlin.time.ExperimentalTime
+
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
@@ -41,19 +46,22 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var aprilDetection: ApriltagDetection? = null
     private var mOpenCvCameraView: ApriltagCamera2View? = null
     private var state: Boolean = true
-    private val TAG = "opencv"
     private lateinit var matInput: Mat
     private lateinit var matResult: Mat
     private lateinit var cameraMatrixData: DoubleArray
     private var mSize: Size = Size(-1, -1)
 
     private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
+    //map 관련 변수
+    private var camPosX = 0
+    private var camPosY = 0
 
     private val permissionList = Manifest.permission.CAMERA
 
-    private  val requestPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()) {
-        when(it) {
+    private val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        when (it) {
             true -> {
                 onCameraPermissionGranted()
             }
@@ -64,7 +72,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     }
 
     //DEFAULT, LEFT, RIGHT, STRAIT, BACKWARDS;
-    init{
+    init {
         coordnateArray[0] = defaultCoords
         coordnateArray[1] = arrowLeftCoords
         coordnateArray[2] = arrowRightCoords
@@ -102,12 +110,12 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
         //그래프가 만들어지면 전달받은 args를 viewmodel에 넘겨줍니다.
         viewModel.tagGraph.observe(viewLifecycleOwner) {
-            if(args.sendingData != SearchFragment.DEFAULT_DESTINATION_ID) {
+            if (args.sendingData != SearchFragment.DEFAULT_DESTINATION_ID) {
                 viewModel.onSpotsObserved(args.sendingData)
             }
         }
 
-        viewModel.isRunning.observe(viewLifecycleOwner){
+        viewModel.isRunning.observe(viewLifecycleOwner) {
             state = it != true
         }
 
@@ -115,6 +123,25 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             binding?.relativeCoorTxt?.text = "x : ${estPosMatrix[0]}\ny : ${estPosMatrix[1]}\nz : ${estPosMatrix[2]}"
             binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
         }
+
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.map)
+        var mBitmap = Bitmap.createBitmap(bitmap!!, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
+
+        viewModel.userCamera.observe(viewLifecycleOwner) { cam ->
+            camPosX = cam.uiCoordsPos().first
+            camPosY = cam.uiCoordsPos().second
+//             카메라의 좌표가 bitmap 크기를 벗어나면 무시합니다.
+            if ((camPosX + MINIMAP_SIZE > bitmap.width) || (camPosY + MINIMAP_SIZE > bitmap.height)) {
+                println("camera 좌표가 bitmap 사이즈를 초과했습니다")
+            } else {
+                mBitmap = Bitmap.createBitmap(bitmap, camPosX, camPosY, MINIMAP_SIZE, MINIMAP_SIZE)
+                binding?.viewImg?.setImageBitmap(mBitmap!!)
+            }
+        }
+
+        binding?.viewImg?.setImageBitmap(mBitmap)
+        binding?.viewImg?.bringToFront()
+        binding?.imgDot?.bringToFront()
 
         return binding?.root
     }
@@ -158,10 +185,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraViewStopped() {
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         matInput = inputFrame.rgba()
 
-        aprilDetection?.let{ detection ->
+        aprilDetection?.let { detection ->
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
@@ -174,8 +202,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
         return matInput
     }
-
-
 
 
     //여기서부턴 퍼미션 관련 메소드
@@ -201,7 +227,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         super.onStart()
         var havePermission = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.CAMERA
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
                 requestPermission.launch(permissionList)
                 havePermission = false
             }
@@ -221,7 +251,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             "예"
         ) { _, _ ->
             requestPermission.launch(
-                Manifest.permission.CAMERA)
+                Manifest.permission.CAMERA
+            )
         }
         builder.setNegativeButton(
             "아니오"
@@ -234,12 +265,18 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     override fun onTagDetect(aprilDetection: ApriltagDetection) {
         this.aprilDetection = aprilDetection
-        if(state) {
+        if (state) {
             viewModel.onDetect(aprilDetection)
         }
     }
 
-    companion object{
+    companion object {
+        private val TAG = "opencv"
+
+        //minimap 관련 const 변수
+        const val MINIMAP_SIZE = 1000
+        const val FPS = 50
+
         // points(x, y, z)
         val defaultCoords = arrayOf(
             0.5, 0.5, 0.0,

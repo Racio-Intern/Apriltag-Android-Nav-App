@@ -35,4 +35,21 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/relative_coor_txt" />
+
+    <ImageView
+        android:id="@+id/view_img"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/img_dot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/view_img"
+        app:layout_constraintStart_toStartOf="@+id/view_img"
+        app:layout_constraintTop_toTopOf="@+id/view_img"
+        app:srcCompat="@drawable/red_dot" />
 </androidx.constraintlayout.widget.ConstraintLayout>
