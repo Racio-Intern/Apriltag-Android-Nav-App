@@ -53,6 +53,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private lateinit var matResult: Mat
     private lateinit var cameraMatrixData: DoubleArray
     private var mSize: Size = Size(-1, -1)
+    private var isCameraMatInit: Boolean = false
 
     private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
     //map 관련 변수
@@ -210,13 +211,18 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         matInput = inputFrame.rgba()
 
         aprilDetection?.let { detection ->
+            if (!isCameraMatInit){
+                val focalLength = OpenCVNative.find_camera_focal_length(detection.p, intArrayOf(mSize.width, mSize.height))
+                cameraMatrixData[2] = focalLength[0] // Cx
+                cameraMatrixData[5] = focalLength[1] // Cy
+                isCameraMatInit = true
+            }
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
             estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             viewModel.onCameraFrame(estPosMatrix)
-            //val sizeArr = intArrayOf(mSize.width, mSize.height)
-            //OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, sizeArr)
+            //OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
             aprilDetection = null
         }
 
