@@ -247,3 +247,45 @@ Java_apriltag_OpenCVNative_calibrateCamera(JNIEnv *env, jclass clazz, jlong mat_
     (*env).ReleaseDoubleArrayElements(arr, jni_arr, 0);
     (*env).ReleaseIntArrayElements(image_size, image_arr, 0);
 }
+extern "C"
+JNIEXPORT jdoubleArray JNICALL
+Java_apriltag_OpenCVNative_find_1camera_1focal_1length(JNIEnv *env, jclass clazz, jdoubleArray arr,
+                                                       jintArray image_size) {
+    jdouble *jni_arr = (*env).GetDoubleArrayElements(arr, NULL);
+    jint *image_arr = (*env).GetIntArrayElements(image_size, NULL);
+
+    // Creating vector to store vectors of 3D points for each apriltag image
+    std::vector<std::vector<cv::Point3f> > objpoints;
+
+    // Creating vector to store vectors of 2D points for each apriltag image
+    std::vector<std::vector<cv::Point2f> > imgpoints;
+
+    vector<Point2f> imagePoint;
+    imagePoint.emplace_back((float) jni_arr[0], (float) jni_arr[1]);
+    imagePoint.emplace_back((float) jni_arr[2], (float) jni_arr[3]);
+    imagePoint.emplace_back((float) jni_arr[4], (float) jni_arr[5]);
+    imagePoint.emplace_back((float) jni_arr[6], (float) jni_arr[7]);
+
+    vector<Point3f> objectPoint;
+    objectPoint.emplace_back(-SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+
+    objpoints.push_back(objectPoint);
+    imgpoints.push_back(imagePoint);
+
+    Mat cameraM;
+    Mat distortionC = Mat::zeros(5, 1, CV_64FC1); // 왜곡 계수
+    cameraM = initCameraMatrix2D(objpoints, imgpoints,cv::Size(image_arr[0], image_arr[1]));
+
+    (*env).ReleaseDoubleArrayElements(arr, jni_arr, 0);
+    (*env).ReleaseIntArrayElements(image_size, image_arr, 0);
+
+    double focal_center[2] = {cameraM.at<double>(0, 2), cameraM.at<double>(1, 2)};
+    jdoubleArray focal_center_arr = (*env).NewDoubleArray(2);
+
+    (*env).SetDoubleArrayRegion(focal_center_arr, 0, 2, focal_center);
+
+    return focal_center_arr;
+}

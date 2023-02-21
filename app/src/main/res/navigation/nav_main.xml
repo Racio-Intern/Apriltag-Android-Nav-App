@@ -21,6 +21,9 @@
         <action
             android:id="@+id/action_entryFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_entryFragment_to_sensorFragment"
+            app:destination="@id/sensorFragment" />
     </fragment>
     <fragment
         android:id="@+id/cameraFragment"
@@ -57,4 +60,9 @@
         android:id="@+id/settingsFragment"
         android:name="com.example.apriltagapp.view.settings.SettingsFragment"
         android:label="SettingsFragment" />
+    <fragment
+        android:id="@+id/sensorFragment"
+        android:name="com.example.apriltagapp.view.sensor.SensorFragment"
+        android:label="fragment_sensor"
+        tools:layout="@layout/fragment_sensor" />
 </navigation>

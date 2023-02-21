@@ -40,6 +40,10 @@ class EntryFragment : Fragment() {
         binding?.btnSettings?.setOnClickListener {
             findNavController().navigate(R.id.action_entryFragment_to_settingsFragment)
         }
+
+        binding?.sensorBtn?.setOnClickListener {
+            findNavController().navigate(R.id.action_entryFragment_to_sensorFragment)
+        }
     }
 
     override fun onDestroy() {
