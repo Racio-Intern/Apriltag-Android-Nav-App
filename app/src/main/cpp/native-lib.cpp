@@ -185,7 +185,7 @@ Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jcl
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jdoubleArray JNICALL
 Java_apriltag_OpenCVNative_calibrateCamera(JNIEnv *env, jclass clazz, jlong mat_addr_input,
                                            jdoubleArray arr,
                                            jintArray image_size) {
@@ -244,8 +244,13 @@ Java_apriltag_OpenCVNative_calibrateCamera(JNIEnv *env, jclass clazz, jlong mat_
     __android_log_print(ANDROID_LOG_INFO, "apriltag_jni_pos",
                         "%f %f %f", p[0], p[1], p[2]);
 
+    jdoubleArray mat_arr = (*env).NewDoubleArray(3);
+
+    (*env).SetDoubleArrayRegion(mat_arr, 0, 3, p);
+
     (*env).ReleaseDoubleArrayElements(arr, jni_arr, 0);
     (*env).ReleaseIntArrayElements(image_size, image_arr, 0);
+    return mat_arr;
 }
 extern "C"
 JNIEXPORT jdoubleArray JNICALL

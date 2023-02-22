@@ -71,7 +71,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
                 onCameraPermissionGranted()
             }
             false -> {
-                showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
+                    showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
             }
         }
     }
@@ -220,9 +220,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
+            //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
             estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             viewModel.onCameraFrame(estPosMatrix)
-            //OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
             aprilDetection = null
         }
 
@@ -276,14 +276,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         builder.setPositiveButton(
             "예"
         ) { _, _ ->
-            requestPermission.launch(
-                Manifest.permission.CAMERA
-            )
-        }
-        builder.setNegativeButton(
-            "아니오"
-        ) { _, _ ->
-            findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
+                findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
         }
         builder.create().show()
 

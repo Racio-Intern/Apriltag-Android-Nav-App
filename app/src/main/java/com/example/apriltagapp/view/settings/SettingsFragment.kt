@@ -37,7 +37,7 @@ class SettingsFragment : Fragment() {
             ) { _, which ->
                 Toast.makeText(
                     this.activity,
-                    "decimateFactor로 ${decimates[which]}가 선택되었습니다.",
+                    "decimateFactor로 ${decimates[which]}이 선택되었습니다.",
                     Toast.LENGTH_SHORT
                 ).show()
                 decimateFactor = decimates[which].toDouble()
