@@ -71,7 +71,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
                 onCameraPermissionGranted()
             }
             false -> {
-                showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
+                    showDialogForPermission("앱을 실행하려면 퍼미션을 허가하셔야합니다.")
             }
         }
     }
@@ -276,14 +276,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         builder.setPositiveButton(
             "예"
         ) { _, _ ->
-            requestPermission.launch(
-                Manifest.permission.CAMERA
-            )
-        }
-        builder.setNegativeButton(
-            "아니오"
-        ) { _, _ ->
-            findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
+                findNavController().navigate(R.id.action_cameraFragment_to_entryFragment)
         }
         builder.create().show()
 

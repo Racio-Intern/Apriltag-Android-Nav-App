@@ -64,5 +64,9 @@
         android:id="@+id/sensorFragment"
         android:name="com.example.apriltagapp.view.sensor.SensorFragment"
         android:label="fragment_sensor"
-        tools:layout="@layout/fragment_sensor" />
+        tools:layout="@layout/fragment_sensor" >
+        <action
+            android:id="@+id/action_sensorFragment_to_entryFragment"
+            app:destination="@id/entryFragment" />
+    </fragment>
 </navigation>

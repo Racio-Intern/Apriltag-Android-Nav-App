@@ -1,8 +1,10 @@
 package com.example.apriltagapp
 
 
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowInsets
 
 import android.view.WindowManager
@@ -14,6 +16,7 @@ import com.example.apriltagapp.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {
+    private val LOGTAG = "MainActivity"
     lateinit var binding: ActivityMainBinding
 
 
@@ -43,6 +46,11 @@ class MainActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         )
+
+        if (packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER)
+            && packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR)){
+            Log.d(LOGTAG, "구글의 STEP_COUNT를 사용할 수 있습니다.")
+        }
 
         ApriltagNative.apriltag_native_init()
         ApriltagNative.apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
