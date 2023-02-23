@@ -1,5 +1,6 @@
 package com.example.apriltagapp.utility
 
+import android.util.Log
 import com.example.apriltagapp.model.*
 import com.google.firebase.database.DataSnapshot
 
@@ -9,6 +10,9 @@ class JsonParser {
         for(child in snapshot.children) {
             val linkedTags = child.child("linkedTags").children
             val id = child.child("id").value as Long
+            val x = child.child("x").value as Any
+            val y = child.child("y").value as Any
+            val rot = child.child("rot").value as Any
 
             val resultLinkedTags: ArrayList<LinkedTag> = arrayListOf()
 
@@ -21,8 +25,30 @@ class JsonParser {
             }
             val resultTag = Tag(id.toInt(), resultLinkedTags)
 
-            tagList.add(resultTag)
+            //type casting
+            if(x is Long) {
+                resultTag.x = x.toDouble()
+            }
+            else if(x is Double){
+                resultTag.x = x.toDouble()
+            }
 
+            if(y is Long) {
+                resultTag.y = y.toDouble()
+            }
+            else if (y is Double) {
+                resultTag.y = y.toDouble()
+            }
+
+            if(rot is Double) {
+                resultTag.rot = rot.toDouble()
+            }
+            else if(rot is Long) {
+                resultTag.rot = rot.toDouble()
+            }
+
+            tagList.add(resultTag)
+            Log.d("json", "새로운 태그 생성 : id : $id, x = $x, y = $y, rotation = $rot")
         }
         return tagList
     }

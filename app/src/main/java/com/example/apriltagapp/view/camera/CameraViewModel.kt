@@ -4,23 +4,19 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import apriltag.ApriltagDetection
+import apriltag.ApriltagPosEstimation
 import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.baseModel.UserCamera
 import com.example.apriltagapp.model.repository.TagFamilyRepository
 import com.example.apriltagapp.utility.NonNullLiveData
 import com.example.apriltagapp.utility.NonNullMutableLiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.*
 
 class CameraViewModel : ViewModel() {
     private val LOGTAG = "CameraViewModel"
-    private val _userCamera = MutableLiveData<UserCamera>(UserCamera(3800.0, 2900.0, 0.0))
-    val userCamera: LiveData<UserCamera>
+    private val _userCamera = NonNullMutableLiveData<UserCamera>(UserCamera(425.0, 675.0, 0.0))
+    val userCamera: NonNullLiveData<UserCamera>
         get() = _userCamera
 
     private val _isRunning = MutableLiveData<Boolean>(false)
@@ -45,49 +41,51 @@ class CameraViewModel : ViewModel() {
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
-
         var count = 0
 
 
-        CoroutineScope(Dispatchers.IO).launch {
-            var x = 500.0
-            var y = 500.0
-
-            var destX = 1700.0 // 1900
-            var destY = 1900.0 // 1300
-
-            var unit = 100.0 / 200
-
-            var r = 90 - atan((3/7).toDouble()) * UserCamera.RAD2DEG - 20
-            while(count < 50) {
-                count ++
-                x += -7 * unit
-                y += -3 * unit
-//                r -= 0.5
-                _userCamera.postValue(UserCamera(x, y, r))
-                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
-            }
-            count = 0
-
-            while(count < 90) {
-                count ++
-                r -= 1
-                _userCamera.postValue(UserCamera(x, y, r))
-                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
-            }
-
-            count = 0
-            while(count < 50) {
-                count ++
-                x += 2.5 * unit
-                y += -7.5 * unit
-                _userCamera.postValue(UserCamera(x, y, r))
-                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
-            }
-
-        }
+//        CoroutineScope(Dispatchers.IO).launch {
+//            var x = 500.0
+//            var y = 500.0
+//
+//            var destX = 1700.0 // 1900
+//            var destY = 1900.0 // 1300
+//
+//            var unit = 100.0 / 200
+//
+//            var r = 90 - atan((3/7).toDouble()) * UserCamera.RAD2DEG - 20
+//            while(count < 50) {
+//                count ++
+//                x += -7 * unit
+//                y += -3 * unit
+////                r -= 0.5
+//                _userCamera.postValue(UserCamera(x, y, r))
+//                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+//            }
+//            count = 0
+//
+//            while(count < 90) {
+//                count ++
+//                r -= 1
+//                _userCamera.postValue(UserCamera(x, y, r))
+//                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+//            }
+//
+//            count = 0
+//            while(count < 50) {
+//                count ++
+//                x += 2.5 * unit
+//                y += -7.5 * unit
+//                _userCamera.postValue(UserCamera(x, y, r))
+//                delay((1000 / CameraFragment.FPS).toLong()) // delay(ms) = 1000ms / FPS
+//            }
+//
+//        }
     }
 
+    /**
+     * 목적지의 tag id를 전달받고 destination tag로 설정합니다.
+     */
     fun onSpotsObserved(receivedTagId: Int) {
         //목적지
         destTag = _tagGraph.value.tagFamily.tagMap[receivedTagId] ?: return
@@ -112,8 +110,30 @@ class CameraViewModel : ViewModel() {
 
     }
 
-    fun onCameraFrame(estPosMat: DoubleArray) {
-        _estimatedPos.postValue(estimateCameraPos(estPosMat[0], estPosMat[1], estPosMat[2]))
+    /**
+     * camera view의 onCameraFrame에 호출하는 함수입니다.
+     * opencv에서 추정한 pos matrix를 전달받아 위치 추정을 하고, 그 결과를 livedata 에 반영합니다.
+     */
+    fun onCameraFrame(posEstimations: ArrayList<ApriltagPosEstimation>) {
+        var avgX = 0.0
+        var avgY = 0.0
+        var count = 0
+
+        for(est in posEstimations){
+            val relativePos = estimateRelativeCamPos(est)
+            if(relativePos == null) {
+                count ++
+                continue
+            }
+            avgX += relativePos.first
+            avgY += relativePos.second
+        }
+        _estimatedPos.postValue(Pair(avgX / (posEstimations.size - count), avgY / (posEstimations.size - count)))
+
+        _userCamera.value.updatePos(avgX / posEstimations.size, avgY / posEstimations.size, 0.0)
+        _userCamera.postValue(_userCamera.value)
+
+
         //Log.d(LOGTAG, "camera pos : ${cameraPos.first} / ${cameraPos.second}")
     }
 
@@ -152,25 +172,25 @@ class CameraViewModel : ViewModel() {
         direction = Direction.DEFAULT
     }
 
-
-    private fun postTag(tag: Tag) {
-        viewModelScope.launch {
-            tagFamilyRepository.postTag(tag)
-        }
-    }
-
-    private fun estimateCameraPos(x: Double, y: Double, z: Double): Pair<Double, Double> {
+    /**
+     * opencv가 구한 카메라 추정 위치를 이용해 평면 좌표계상 위치를 추정합니다.
+     */
+    private fun estimateRelativeCamPos(posEstimation: ApriltagPosEstimation): Pair<Double, Double>? {
+        val x = posEstimation.tvecs[0]
+        val z = posEstimation.tvecs[2]
+        val detectedTag = tagGraph.value.tagFamily.tagMap[posEstimation.id]?:return null
 
         val distance = hypot(x, z)
-        val theta = atan(z / x) - currentTag.rot
+        val theta = atan(z / x) - detectedTag.rot
 //        println(" x / y / z :$x / $y / $z")
 //        println("theta : ${theta / PI}ㅠ")
 
 
         val cos = if(theta > 0) cos(theta) else -cos(theta)
         val sin = if(theta > 0) sin(theta) else -sin(theta)
-        val camPosX = currentTag.x + distance * cos
-        val camPosY = currentTag.y + distance * sin
+        val camPosX = detectedTag.x - distance * cos
+        val camPosY = detectedTag.y + distance * sin
+        println("cam pos : $camPosX $camPosY")
         return Pair(camPosX, camPosY)
     }
 }

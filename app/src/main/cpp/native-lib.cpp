@@ -8,6 +8,12 @@
 using namespace cv;
 using namespace std;
 
+static struct {
+    jclass april_pos_cls;
+    jmethodID apc_constructor;
+    jfieldID apc_id_field, apc_rvecs_field, apc_tvecs_field, apc_relative_pos_field;
+} state;
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_apriltagapp_view_camera_CameraFragment_ConvertRGBtoGray(JNIEnv *env, jobject thiz,
@@ -119,10 +125,10 @@ Java_apriltag_OpenCVNative_put_1text(JNIEnv *env, jclass clazz, jlong mat_addr_i
 
 extern "C"
 JNIEXPORT jdoubleArray JNICALL
-Java_apriltag_OpenCVNative_apriltag_1detect_1and_1pos_1estimate(JNIEnv *env, jclass clazz,
-                                                                jlong mat_addr_input,
-                                                                jdoubleArray arr,
-                                                                jdoubleArray camera_matrix_data) {
+Java_apriltag_OpenCVNative_old_1apriltag_1pos_1estimate(JNIEnv *env, jclass clazz,
+                                                        jlong mat_addr_input,
+                                                        jdoubleArray arr,
+                                                        jdoubleArray camera_matrix_data) {
 
     Mat &matInput = *(Mat *) mat_addr_input;
     jdouble *jni_arr = (*env).GetDoubleArrayElements(arr, NULL);
@@ -256,6 +262,38 @@ extern "C"
 JNIEXPORT jdoubleArray JNICALL
 Java_apriltag_OpenCVNative_find_1camera_1focal_1length(JNIEnv *env, jclass clazz, jdoubleArray arr,
                                                        jintArray image_size) {
+    // Get ApriltagPosDetection Class
+    jclass ad_cls = (*env).FindClass("apriltag/ApriltagPosEstimation");
+
+    if (!ad_cls) {
+        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
+                            "couldn't find ApriltagPosDetection class");
+        return NULL;
+    }
+
+    state.april_pos_cls = reinterpret_cast<jclass>((*env).NewGlobalRef(ad_cls));
+
+    state.apc_constructor = (*env).GetMethodID(ad_cls, "<init>", "()V");
+    if (!state.apc_constructor) {
+        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
+                            "couldn't find ApriltagPosDetection constructor");
+        return NULL;
+    }
+
+    state.apc_id_field = (*env).GetFieldID(ad_cls, "id", "I");
+    state.apc_rvecs_field = (*env).GetFieldID(ad_cls, "rvecs", "[D");
+    state.apc_tvecs_field = (*env).GetFieldID(ad_cls, "tvecs", "[D");
+    state.apc_relative_pos_field = (*env).GetFieldID(ad_cls, "relativePos", "[D");
+
+    if (!state.apc_id_field ||
+        !state.apc_rvecs_field ||
+        !state.apc_tvecs_field ||
+        !state.apc_relative_pos_field) {
+        __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
+                            "couldn't find ApriltagPosDetection fields");
+        return NULL;
+    }
+
     jdouble *jni_arr = (*env).GetDoubleArrayElements(arr, NULL);
     jint *image_arr = (*env).GetIntArrayElements(image_size, NULL);
 
@@ -289,8 +327,76 @@ Java_apriltag_OpenCVNative_find_1camera_1focal_1length(JNIEnv *env, jclass clazz
 
     double focal_center[2] = {cameraM.at<double>(0, 2), cameraM.at<double>(1, 2)};
     jdoubleArray focal_center_arr = (*env).NewDoubleArray(2);
-
     (*env).SetDoubleArrayRegion(focal_center_arr, 0, 2, focal_center);
 
     return focal_center_arr;
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_apriltag_OpenCVNative_apriltag_1pos_1estimate(JNIEnv *env, jclass clazz, jlong mat_addr_input,
+                                         jdoubleArray tag_vertex_arr,
+                                         jdoubleArray camera_matrix_data) {
+
+    Mat &matInput = *(Mat *) mat_addr_input;
+    jdouble *jni_arr = (*env).GetDoubleArrayElements(tag_vertex_arr, NULL);
+    jdouble *jni_cameraM_data = (*env).GetDoubleArrayElements(camera_matrix_data, NULL);
+
+    Mat cameraM = Mat(3, 3, CV_64FC1, jni_cameraM_data);
+    Mat distortionC = Mat::zeros(5, 1, CV_64FC1); // 왜곡 계수
+
+    vector<Point2f> imagePoint;
+    imagePoint.emplace_back((float) jni_arr[0], (float) jni_arr[1]);
+    imagePoint.emplace_back((float) jni_arr[2], (float) jni_arr[3]);
+    imagePoint.emplace_back((float) jni_arr[4], (float) jni_arr[5]);
+    imagePoint.emplace_back((float) jni_arr[6], (float) jni_arr[7]);
+
+    vector<Point3f> objectPoint;
+    objectPoint.emplace_back(-SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+    objectPoint.emplace_back(-SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+
+    // 카메라 rotation과 translation 벡터 찾기
+    // @ref SOLVEPNP_IPPE_SQUARE this is a special case suitable for marker pose estimation.
+    Mat rvecs, tvecs; // 카메라 rotation, translation
+    solvePnP(objectPoint, imagePoint,cameraM, distortionC, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
+
+    // 3D 포인터를 이미지 평면에 투영
+    vector<cv::Point3f> obj_pts;
+    obj_pts.emplace_back(-SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(SQUARE_LENGTH / 2, SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+    obj_pts.emplace_back(-SQUARE_LENGTH / 2, -SQUARE_LENGTH / 2, 0);
+
+    projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, imagePoint);
+
+    vector<Point2i> vector_pts;
+    // 이미지 평면에 투영 시킨 점들을 가지고 polyline을 그립니다.
+    for (Point_<float> &i: imagePoint) {
+        vector_pts.push_back(i);
+    }
+    polylines(matInput, vector_pts, true, Scalar(255.0, 0.0, 0.0), 2);
+
+    (*env).ReleaseDoubleArrayElements(tag_vertex_arr, jni_arr, 0);
+    (*env).ReleaseDoubleArrayElements(camera_matrix_data, jni_cameraM_data, 0);
+
+    Mat rt;
+    Rodrigues(rvecs, rt);
+    Mat r = rt.inv();
+    Mat pos = -r * tvecs;
+
+    // apc = new ApriltagPosDetection();
+    jobject apc = (*env).NewObject(state.april_pos_cls, state.apc_constructor);
+
+    jdoubleArray apc_rvecs =  reinterpret_cast<jdoubleArray>((*env).GetObjectField(apc, state.apc_rvecs_field));
+    (*env).SetDoubleArrayRegion(apc_rvecs, 0, 3, (double *)rvecs.data);
+
+    jdoubleArray apc_tvecs = reinterpret_cast<jdoubleArray>((*env).GetObjectField(apc, state.apc_tvecs_field));
+    (*env).SetDoubleArrayRegion(apc_tvecs, 0, 3, (double *)tvecs.data);
+
+    jdoubleArray apc_pos = reinterpret_cast<jdoubleArray>((*env).GetObjectField(apc, state.apc_relative_pos_field));
+    (*env).SetDoubleArrayRegion(apc_pos, 0, 3, (double *) pos.data);
+
+    return apc;
 }

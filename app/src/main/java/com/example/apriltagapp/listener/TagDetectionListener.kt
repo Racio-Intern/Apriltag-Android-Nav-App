@@ -3,5 +3,5 @@ package com.example.apriltagapp.listener
 import apriltag.ApriltagDetection
 
 interface TagDetectionListener {
-    fun onTagDetect(aprilDetection: ApriltagDetection)
+    fun onTagDetect(aprilDetection: ArrayList<ApriltagDetection>)
 }
