@@ -4,9 +4,7 @@ package com.example.apriltagapp.view.camera
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -24,11 +22,11 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
+import apriltag.ApriltagPosEstimation
 import apriltag.OpenCVNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
-import com.example.apriltagapp.model.baseModel.UserCamera
 import com.example.apriltagapp.utility.BitmapController
 import com.example.apriltagapp.view.ApriltagCamera2View
 import com.example.apriltagapp.view.search.SearchFragment
@@ -37,7 +35,6 @@ import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import kotlin.system.measureTimeMillis
 import kotlin.time.ExperimentalTime
 
 
@@ -46,7 +43,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private val viewModel: CameraViewModel by viewModels()
     var binding: FragmentCameraBinding? = null
     private val args: CameraFragmentArgs by navArgs()
-    private var aprilDetection: ApriltagDetection? = null
+    private var aprilDetections: ArrayList<ApriltagDetection>? = null
     private var mOpenCvCameraView: ApriltagCamera2View? = null
     private var state: Boolean = true
     private lateinit var matInput: Mat
@@ -54,8 +51,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private lateinit var cameraMatrixData: DoubleArray
     private var mSize: Size = Size(-1, -1)
     private var isCameraMatInit: Boolean = false
+    private var detectFinished: Boolean = true
 
-    private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
+//    private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
+    private var posEstimateResults = ArrayList<ApriltagPosEstimation>()
     //map 관련 변수
     private var camPosX = 0
     private var camPosY = 0
@@ -125,7 +124,6 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         }
 
         viewModel.estimatedPos.observe(viewLifecycleOwner){
-            binding?.relativeCoorTxt?.text = "x : ${estPosMatrix[0]}\ny : ${estPosMatrix[1]}\nz : ${estPosMatrix[2]}"
             binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
         }
 
@@ -134,14 +132,15 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         option.inSampleSize = 2
         val map = BitmapFactory.decodeResource(resources, R.drawable.test, option)
 
-        println("map size : ${map.width}, ${map.height}")
 
         viewModel.userCamera.observe(viewLifecycleOwner) { cam ->
             camPosX = cam.getUICoords().first
             camPosY = cam.getUICoords().second
+            println("fragment : $camPosX $camPosY")
 
 //             카메라의 좌표가 bitmap 크기를 벗어나는지 확인합니다.
             try {
+                println("${camPosX - MINIMAP_SIZE}, ${camPosY - MINIMAP_SIZE}, ${2 * MINIMAP_SIZE}")
                 val croppedArea = bitmapController.cropSquareArea(map, camPosX - MINIMAP_SIZE, camPosY - MINIMAP_SIZE, 2 * MINIMAP_SIZE)
                     ?: throw RuntimeException("crop square area returns null")
 
@@ -156,7 +155,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
                 binding?.viewImg?.setImageBitmap(finalArea)
             } catch (e: RuntimeException) {
-                Log.e(TAG, "bitmap runtime error")
+                Log.e(TAG, "bitmap runtime error : $e")
             }
         }
 
@@ -210,9 +209,9 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         matInput = inputFrame.rgba()
 
-        aprilDetection?.let { detection ->
+        aprilDetections?.let {
             if (!isCameraMatInit){
-                val focalLength = OpenCVNative.find_camera_focal_length(detection.p, intArrayOf(mSize.width, mSize.height))
+                val focalLength = OpenCVNative.find_camera_focal_length(it[0].p, intArrayOf(mSize.width, mSize.height))
                 cameraMatrixData[2] = focalLength[0] // Cx
                 cameraMatrixData[5] = focalLength[1] // Cy
                 isCameraMatInit = true
@@ -221,9 +220,17 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
             //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
-            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
-            viewModel.onCameraFrame(estPosMatrix)
-            aprilDetection = null
+//            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
+            for (detection in it) {
+                posEstimateResults.add(OpenCVNative.apriltag_pos_estimate(
+                    matInput.nativeObjAddr,
+                    detection.p,
+                    cameraMatrixData
+                ))
+            }
+            viewModel.onCameraFrame(posEstimateResults)
+            posEstimateResults.clear()
+            aprilDetections = null
         }
 
         return matInput
@@ -282,10 +289,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
 
     }
 
-    override fun onTagDetect(aprilDetection: ApriltagDetection) {
-        this.aprilDetection = aprilDetection
+    override fun onTagDetect(aprilDetections: ArrayList<ApriltagDetection>) {
+        this.aprilDetections = aprilDetections
         if (state) {
-            viewModel.onDetect(aprilDetection)
+            viewModel.onDetect(aprilDetections[0])
         }
     }
 

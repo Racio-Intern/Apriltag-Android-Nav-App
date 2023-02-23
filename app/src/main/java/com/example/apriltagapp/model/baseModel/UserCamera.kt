@@ -19,6 +19,12 @@ class UserCamera(x: Double, y: Double, r: Double) {
         return Pair(posX.toInt(), posY.toInt())
     }
 
+    fun updatePos(x: Double, y: Double, r: Double) {
+        posX = x
+        posY = y
+        rotRad = r
+    }
+
 //    private fun getRotVector(): Pair<Double, Double> {
 //        return Pair(cos(rotRad), sin(rotRad))
 //    }
