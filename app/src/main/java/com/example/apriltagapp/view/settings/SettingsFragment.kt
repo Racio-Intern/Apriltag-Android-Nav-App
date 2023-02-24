@@ -20,7 +20,7 @@ class SettingsFragment : Fragment() {
 
     /** default value */
     var decimateFactor = 4.0
-    var tagFamily = "tagStandard41h12"
+    var tagFamily = "tagStandard52h13"
     var thread = 1
 
     override fun onCreateView(
