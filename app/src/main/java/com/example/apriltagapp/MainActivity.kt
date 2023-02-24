@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         ApriltagNative.apriltag_native_init()
-        ApriltagNative.apriltag_init("tagStandard52h13", 2, 4.0, 0.0, 1)
+        ApriltagNative.apriltag_init("tagStandard41h12", 2, 4.0, 0.0, 1)
 
         setContentView(binding.root)
     }

@@ -16,7 +16,7 @@ class SettingsFragment : Fragment() {
 
     private val decimates: Array<String> = arrayOf("1.0", "1.5", "2.0", "3.0", "4.0")
     private val threads: Array<String> = arrayOf("1", "2", "4", "6", "8")
-    private val tagFamilies: Array<String> = arrayOf("tag16h5" ,"tag25h9","tag36h10" ,"tag36h11",  "tagStandard41h12")
+    private val tagFamilies: Array<String> = arrayOf("tag16h5" ,"tag25h9","tag36h10" ,"tag36h11",  "tagStandard41h12", "tagStandard52h13")
 
     /** default value */
     var decimateFactor = 4.0
