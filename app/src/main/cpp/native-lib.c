@@ -9,6 +9,7 @@
 #include "tag25h9.h"
 #include "apriltag/tag16h5.h"
 #include "tagStandard41h12.h"
+#include "tagStandard52h13.h"
 
 static struct {
     apriltag_detector_t *td;
@@ -112,6 +113,9 @@ Java_apriltag_ApriltagNative_apriltag_1init(
     } else if (!strcmp(tfname, "tagStandard41h12")) {
         state.tf = tagStandard41h12_create();
         state.tf_destroy = tagStandard41h12_destroy;
+    } else if (!strcmp(tfname, "tagStandard52h13")) {
+        state.tf = tagStandard52h13_create();
+        state.tf_destroy = tagStandard52h13_destroy;
     } else {
         __android_log_print(ANDROID_LOG_ERROR, "apriltag_jni",
                             "invalid tag family: %s", tfname);
