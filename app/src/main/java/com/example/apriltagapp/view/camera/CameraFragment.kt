@@ -124,7 +124,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         }
 
         viewModel.estimatedPos.observe(viewLifecycleOwner){
-            binding?.relativeCoorTxt?.text = "상대좌표:\nx : ${viewModel.relativePos[0]}\ny : ${viewModel.relativePos[1]}\nz : ${viewModel.relativePos[2]}"
+            binding?.relativeCoorTxt?.text = "Tag Id : ${viewModel.relativePos[3].toInt()}\n상대좌표:\nx : ${viewModel.relativePos[0]}\ny : ${viewModel.relativePos[1]}\nz : ${viewModel.relativePos[2]}"
             binding?.absoluteCoorTxt?.text = "절대좌표:\nx : ${it.first}\ny : ${it.second}"
         }
 
