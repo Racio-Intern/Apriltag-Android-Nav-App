@@ -3,6 +3,7 @@ package com.example.apriltagapp.view.sensor
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.PointF
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -38,7 +39,9 @@ class SensorFragment : Fragment(), SensorEventListener {
     private var timestamp: Double = 0.0
 
     private var mSteps: Int = 0
-    private var mCounterSteps: Int = 0
+    private var mPreSteps: Int = 0
+    private var preCounterSteps: Int = 0
+    private var isStepsChanged: Boolean = false
 
     private var mLastAccelerometer = FloatArray(3)
     private var mLastAccelerometerSet: Boolean = false
@@ -66,6 +69,10 @@ class SensorFragment : Fragment(), SensorEventListener {
     private var magnitudeStore: Double = 0.0
     private var delay: Int = MIN_DELAY
     private var mCountStep: Int = 0
+
+    private var mLocation: DoubleArray = doubleArrayOf(0.0, 0.0)
+
+    private var mStepDetectorCounts: Int = 0
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private val requestPermission = registerForActivityResult(
@@ -97,7 +104,6 @@ class SensorFragment : Fragment(), SensorEventListener {
 
     override fun onStart() {
         super.onStart()
-        var havePermission = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(
                     requireContext(),
@@ -105,14 +111,10 @@ class SensorFragment : Fragment(), SensorEventListener {
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-                havePermission = false
             }
         }
-        if (havePermission) {
-
-        }
-
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sensorManager = activity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -130,7 +132,6 @@ class SensorFragment : Fragment(), SensorEventListener {
     override fun onResume() {
         super.onResume()
 
-        /*
         // 가속도계와 지가계 센서 가져오기
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also { accelerometer ->
             sensorManager.registerListener(
@@ -148,7 +149,6 @@ class SensorFragment : Fragment(), SensorEventListener {
                 SensorManager.SENSOR_DELAY_UI
             )
         }
-        */
 
         // 중력을 뺀 가속도 값 가져오기
         sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)?.also {linearAcceleration ->
@@ -166,6 +166,26 @@ class SensorFragment : Fragment(), SensorEventListener {
                 this,
                 it,
                 SensorManager.SENSOR_DELAY_FASTEST,
+                SensorManager.SENSOR_DELAY_UI
+            )
+        }
+
+        // STEP DETECTOR 가져오기
+        sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)?.also {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_FASTEST,
+                SensorManager.SENSOR_DELAY_UI
+            )
+        }
+
+        // 기압센서 가져오기
+        sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)?.also {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL,
                 SensorManager.SENSOR_DELAY_UI
             )
         }
@@ -207,17 +227,29 @@ class SensorFragment : Fragment(), SensorEventListener {
             System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
         } else if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
             System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
-        } else if (event.sensor.type == Sensor.TYPE_STEP_COUNTER){
-            if (mCounterSteps < 1){
-                mCounterSteps =  event.values[0].toInt()
+        } else if (event.sensor.type == Sensor.TYPE_STEP_COUNTER) {
+            if (preCounterSteps < 1){
+                preCounterSteps =  event.values[0].toInt()
             }
-            mSteps = event.values[0].toInt() - mCounterSteps
+            mPreSteps = mSteps
+            mSteps = event.values[0].toInt() - preCounterSteps
             binding?.stepCountTxt?.text = "step_count : ${mSteps}"
+            isStepsChanged = true
+        } else if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
+            mStepDetectorCounts += 1
+            binding?.textView5?.text = "step_detector_count : ${mStepDetectorCounts}"
+        } else if (event.sensor.type == Sensor.TYPE_PRESSURE){
+            binding?.pressureTxt?.text = "기압 : ${event.values[0]}"
         }
 
-        adjustValues()
-        calculateStepCount()
-        //updateOrientationAngles()
+        adjustValues()              // 측정된 중력을 제외한 가속도값 조정
+        calculateStepCount()        // 걸음 포착 알고리즘
+        updateOrientationAngles()   // 방위각 수정
+
+        if (isStepsChanged) {       // 만약 걸음을 포착했다면 내 위치를 수정
+            updateMyLocation()
+            isStepsChanged = false
+        }
     }
 
     // Compute the three orientation angles based on the most recent readings from
@@ -234,7 +266,7 @@ class SensorFragment : Fragment(), SensorEventListener {
         // "mRotationMatrix" now has up-to-date information.
         // 방위각(z축을 중심으로 한 각도), 경사(x축을 중심으로 한 각도), 롤(y축을 중심으로 한 각도)
         SensorManager.getOrientation(rotationMatrix, orientationAngles)
-        Log.d(LOGTAG, "orientationA : ${orientationAngles.toList()}")
+        // Log.d(LOGTAG, "orientationA : ${orientationAngles.toList()}")
         // "mOrientationAngles" now has up-to-date information.
     }
 
@@ -297,6 +329,14 @@ class SensorFragment : Fragment(), SensorEventListener {
         }
     }
 
+    fun updateMyLocation(){
+        // 일단은 0,0을 기준으로 시작한다고 가정
+        // 북쪽이 +y 방향
+        val length = STRIDE_LENGTH * (mSteps - mPreSteps)
+        mLocation[0] += length * Math.sin(RADIANS_TO_DEGREES * orientationAngles[0])
+        mLocation[1] += length * Math.cos(RADIANS_TO_DEGREES * orientationAngles[0])
+    }
+
     /*
     변경할 수 있는 점
     1. x, y, z축 모두에 대해서 보는게 아니라 대체로 3개의 축 중에서 가장 큰 변화를
@@ -319,6 +359,13 @@ class SensorFragment : Fragment(), SensorEventListener {
         /**
          * 다음 발을 내딛기 위해 몸을 앞으로 끌어당길 때에 가속도 크기의 임계치
          */
-        private val STEP_DETECT_THRESHOLD = 0.1
+        private val STEP_DETECT_THRESHOLD = 0.15
+
+        /**
+         * 키 170cm의 평균 남자 보폭 길이(단위 : 미터)
+         */
+        private val STRIDE_LENGTH = 0.7
+
+        const val RADIANS_TO_DEGREES = 57.29577951308232
     }
 }
