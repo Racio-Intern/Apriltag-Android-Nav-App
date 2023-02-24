@@ -124,7 +124,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         }
 
         viewModel.estimatedPos.observe(viewLifecycleOwner){
-            binding?.absoluteCoorTxt?.text = "x : ${it.first}\ny : ${it.second}"
+            binding?.relativeCoorTxt?.text = "상대좌표:\nx : ${viewModel.relativePos[0]}\ny : ${viewModel.relativePos[1]}\nz : ${viewModel.relativePos[2]}"
+            binding?.absoluteCoorTxt?.text = "절대좌표:\nx : ${it.first}\ny : ${it.second}"
         }
 
         val option = BitmapFactory.Options()
@@ -136,7 +137,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         viewModel.userCamera.observe(viewLifecycleOwner) { cam ->
             camPosX = cam.getUICoords().first
             camPosY = cam.getUICoords().second
-            println("fragment : $camPosX $camPosY")
+            //println("fragment : $camPosX $camPosY")
 
 //             카메라의 좌표가 bitmap 크기를 벗어나는지 확인합니다.
             try {
@@ -227,7 +228,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
                     detection.p,
                     cameraMatrixData
                 )
-                Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
+                // Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
                 posEstiResult.id = detection.id
                 posEstimateResults.add(posEstiResult)
             }

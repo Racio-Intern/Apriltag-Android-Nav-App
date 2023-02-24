@@ -1,8 +1,6 @@
 #include "opencv2/opencv.hpp"
 #include <jni.h>
 #include <android/log.h>
-#include <camera_params.h>
-
 #define SQUARE_LENGTH 8.4f
 
 using namespace cv;
@@ -65,6 +63,14 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     jdouble *jni_draw_array = (*env).GetDoubleArrayElements(drawArray, NULL);
     int len = (*env).GetArrayLength(drawArray);
 
+    /*
+    cameraMatrix : (3 x 3)   fx, 0,  cx
+                             0,  fy, cy
+                             0,  0,  1
+*/
+    static double camera_matrix_data[9] = {1005, 0, 720.0,
+                                           0, 1005, 540.0,
+                                           0, 0, 1};
     Mat cameraM = Mat(3, 3, CV_64FC1, camera_matrix_data);
     Mat distortionC = Mat::zeros(5, 1, CV_64FC1); // 왜곡 계수
 
@@ -267,7 +273,7 @@ Java_apriltag_OpenCVNative_find_1camera_1focal_1length(JNIEnv *env, jclass clazz
 
     if (!ad_cls) {
         __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
-                            "couldn't find ApriltagPosDetection class");
+                            "couldn't find ApriltagPosEstimation class");
         return NULL;
     }
 
@@ -276,7 +282,7 @@ Java_apriltag_OpenCVNative_find_1camera_1focal_1length(JNIEnv *env, jclass clazz
     state.apc_constructor = (*env).GetMethodID(ad_cls, "<init>", "()V");
     if (!state.apc_constructor) {
         __android_log_write(ANDROID_LOG_ERROR, "apriltag_jni",
-                            "couldn't find ApriltagPosDetection constructor");
+                            "couldn't find ApriltagPosEstimation constructor");
         return NULL;
     }
 
