@@ -120,13 +120,13 @@ class CameraViewModel : ViewModel() {
         var count = 0
 
         for(est in posEstimations){
-            val relativePos = estimateRelativeCamPos(est)
-            if(relativePos == null) {
+            val absPos = estimateAbsCamPos(est)
+            if(absPos == null) {
                 count ++
                 continue
             }
-            avgX += relativePos.first
-            avgY += relativePos.second
+            avgX += absPos.first
+            avgY += absPos.second
         }
         _estimatedPos.postValue(Pair(avgX / (posEstimations.size - count), avgY / (posEstimations.size - count)))
 
@@ -175,9 +175,9 @@ class CameraViewModel : ViewModel() {
     /**
      * opencv가 구한 카메라 추정 위치를 이용해 평면 좌표계상 위치를 추정합니다.
      */
-    private fun estimateRelativeCamPos(posEstimation: ApriltagPosEstimation): Pair<Double, Double>? {
-        val x = posEstimation.tvecs[0]
-        val z = posEstimation.tvecs[2]
+    private fun estimateAbsCamPos(posEstimation: ApriltagPosEstimation): Pair<Double, Double>? {
+        val x = posEstimation.relativePos[0]
+        val z = posEstimation.relativePos[2]
         val detectedTag = tagGraph.value.tagFamily.tagMap[posEstimation.id]?:return null
 
         val distance = hypot(x, z)
@@ -190,7 +190,7 @@ class CameraViewModel : ViewModel() {
         val sin = if(theta > 0) sin(theta) else -sin(theta)
         val camPosX = detectedTag.x - distance * cos
         val camPosY = detectedTag.y + distance * sin
-        println("cam pos : $camPosX $camPosY")
+//        println("cam pos :${detectedTag.x} $camPosX $camPosY")
         return Pair(camPosX, camPosY)
     }
 }
