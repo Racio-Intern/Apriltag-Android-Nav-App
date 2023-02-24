@@ -222,11 +222,14 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
 //            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             for (detection in it) {
-                posEstimateResults.add(OpenCVNative.apriltag_pos_estimate(
+                val posEstiResult =OpenCVNative.apriltag_pos_estimate(
                     matInput.nativeObjAddr,
                     detection.p,
                     cameraMatrixData
-                ))
+                )
+                Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
+                posEstiResult.id = detection.id
+                posEstimateResults.add(posEstiResult)
             }
             viewModel.onCameraFrame(posEstimateResults)
             posEstimateResults.clear()
