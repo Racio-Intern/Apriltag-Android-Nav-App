@@ -25,4 +25,16 @@ class SearchViewModel : ViewModel() {
         // firebase에서 spot 데이터를 불러옵니다.
         tagFamilyRepository.observeSpots(_spots)
     }
+
+    fun onSearchTextChanged(text: String): ArrayList<String> {
+        val result: ArrayList<String> = arrayListOf()
+        spots.value?.let { spotNames ->
+            for(key in spotNames.keys) {
+                if(key.startsWith(text)) {
+                    result.add(key)
+                }
+            }
+        }
+        return result
+    }
 }

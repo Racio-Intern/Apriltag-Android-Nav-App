@@ -7,11 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.SearchView
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.apriltagapp.databinding.FragmentSearchBinding
+import com.example.apriltagapp.listener.SearchResultClickListener
 
-class SearchFragment : Fragment() {
+class SearchFragment : Fragment(), SearchResultClickListener {
 
     companion object {
         const val DEFAULT_DESTINATION_ID = -1
@@ -42,30 +45,28 @@ class SearchFragment : Fragment() {
             arrayAdapter.notifyDataSetChanged()
         }
 
+        binding?.viewResult?.layoutManager = LinearLayoutManager(context)
+        binding?.viewResult?.adapter = SearchResultAdapter(spotPairList, this)
 
-        val destSpinner = binding?.spnDest?.apply {
-            adapter = arrayAdapter
-            this.onItemSelectedListener = object:AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    destinationId = spotPairList[position].second
-                    println("목적지 : ${spotPairList[position].first}")
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                }
-
+        val queryTextListener = object: SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
             }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                newText?.apply {
+                    spotNameList.clear()
+                    for(name in viewModel.onSearchTextChanged(newText)) {
+                        spotNameList.add(name)
+                    }
+                    binding?.viewResult?.adapter?.notifyDataSetChanged()
+                }
+                return false
+            }
+
         }
 
-        binding?.btnStartNavi?.setOnClickListener {
-            val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(destinationId)
-            findNavController().navigate(action)
-        }
+        binding?.viewSearch?.setOnQueryTextListener(queryTextListener)
 
 
 
@@ -75,6 +76,11 @@ class SearchFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         binding = null
+    }
+
+    override fun onSearchResultClicked(spotId: Int) {
+        val action = SearchFragmentDirections.actionSearchFragmentToCameraFragment(spotId)
+        findNavController().navigate(action)
     }
 
 }
