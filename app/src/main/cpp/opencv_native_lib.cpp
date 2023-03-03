@@ -253,8 +253,6 @@ Java_apriltag_OpenCVNative_calibrateCamera(JNIEnv *env, jclass clazz, jlong mat_
     Mat pos = -r * tvecs;
 
     double *p = (double *) pos.data;
-    __android_log_print(ANDROID_LOG_INFO, "apriltag_jni_pos",
-                        "%f %f %f", p[0], p[1], p[2]);
 
     jdoubleArray mat_arr = (*env).NewDoubleArray(3);
 

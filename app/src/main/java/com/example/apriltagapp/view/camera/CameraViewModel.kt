@@ -40,7 +40,8 @@ class CameraViewModel : ViewModel() {
     private var currentTag: Tag = Tag()
 
     // CameraFragment에서 상대좌표 출력을 위한 변수로 첫번째로 들어온 tag로부터의 상대거리를 저장
-    var relativePos: DoubleArray = doubleArrayOf(0.0, 0.0, 0.0)
+    // 마지막 배열의 원소는 tag id
+    var relativePos: DoubleArray = doubleArrayOf(0.0, 0.0, 0.0, 0.0)
 
     init {
         tagFamilyRepository.observeTagFamily(_tagGraph)
@@ -134,6 +135,7 @@ class CameraViewModel : ViewModel() {
         relativePos[0] = posEstimations[0].relativePos[0]
         relativePos[1] = posEstimations[0].relativePos[1]
         relativePos[2] = posEstimations[0].relativePos[2]
+        relativePos[3] = posEstimations[0].id.toDouble()
         _estimatedPos.postValue(Pair(avgX / (posEstimations.size - count), avgY / (posEstimations.size - count)))
 
         _userCamera.value.updatePos(avgX / posEstimations.size, avgY / posEstimations.size, 0.0)
