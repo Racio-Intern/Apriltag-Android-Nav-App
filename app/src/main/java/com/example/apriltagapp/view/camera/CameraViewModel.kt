@@ -32,7 +32,7 @@ class CameraViewModel : ViewModel() {
     var direction = Direction.DEFAULT
     private val tagFamilyRepository = TagFamilyRepository()
 
-    private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(tags_1))
+    private val _tagGraph = NonNullMutableLiveData<TagGraph>(TagGraph(arrayListOf()))
     val tagGraph: NonNullLiveData<TagGraph>
         get() = _tagGraph
 
