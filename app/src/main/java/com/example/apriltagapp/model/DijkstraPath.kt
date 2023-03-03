@@ -7,7 +7,7 @@ import java.util.PriorityQueue
  * Node와 Edge class를 상황에 맞게 구현해주고,
  * 구현한 클래스를 활용해 다익스트라를 사용할 수 있습니다.
  */
-open class DijkstraPath {
+open class DijkstraPath(nodes: ArrayList<Node>, edges: ArrayList<Edge>) {
 
     open class Node(val id: Int)
 
@@ -34,7 +34,7 @@ open class DijkstraPath {
     }
 
     var resultPath: ResultPath? = null
-    val graph: MutableMap<Int, ArrayList<Pair<Node, Int>>> = mutableMapOf()
+    val graph: MutableMap<Int, ArrayList<Pair<Node, Int>>>
 
     /**
      * 총 노드의 리스트와, 엣지의 리스트를 받아, 그래프를 초기화하는 함수입니다.
@@ -48,6 +48,16 @@ open class DijkstraPath {
 
         addEdge(edges)
         return graph
+    }
+
+    init{
+        graph = mutableMapOf()
+
+        for(node in nodes) {
+            graph[node.id] = arrayListOf()
+        }
+
+        addEdge(edges)
     }
 
     private fun addEdge(edges: ArrayList<Edge>) {
@@ -98,6 +108,13 @@ open class DijkstraPath {
             } ?: throw NullPointerException("tagmap[$curNode] is empty")
         }
 
+        if (start == destination) {
+            throw NullPointerException("출발지와 목적지가 같습니다.")
+        }
+        else if (curNode != destination){
+            throw NullPointerException("경로를 찾을 수 없습니다.")
+        }
+
         var nextNode: Int = curNode
 
         //여기부터 추가된 코드
@@ -113,6 +130,7 @@ open class DijkstraPath {
             path.add(0, nextTagId?:throw NullPointerException("next tag id가 null입니다."))
             nextTagId = backtracking[nextTagId]
         }
+        path.add(0, start)
 
         return ResultPath(distance, path)
     }
