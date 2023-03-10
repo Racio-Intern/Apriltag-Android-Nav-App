@@ -153,8 +153,8 @@ Java_apriltag_OpenCVNative_draw_1polylines_1on_1apriltag(JNIEnv *env, jclass cla
     // 3D 포인터를 이미지 평면에 투영
     vector<cv::Point3f> obj_pts;
     for (int i = 0; i < vertex_num / 3; i++) {
-        obj_pts.emplace_back((float) polygon_vertex[3 * i], (float) polygon_vertex[3 * i + 1],
-                             (float) polygon_vertex[3 * i + 2]);
+        obj_pts.emplace_back(SQUARE_LENGTH * (float) polygon_vertex[3 * i], SQUARE_LENGTH * (float) polygon_vertex[3 * i + 1],
+                             SQUARE_LENGTH * (float) polygon_vertex[3 * i + 2]);
     }
     projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, image_point);
 
@@ -237,8 +237,8 @@ Java_apriltag_OpenCVNative_draw_1and_1estimate_1camera_1position(JNIEnv *env, jc
     // 3D 포인터를 이미지 평면에 투영
     vector<cv::Point3f> obj_pts;
     for (int i = 0; i < vertex_num / 3; i++) {
-        obj_pts.emplace_back((float) polygon_vertex[3 * i], (float) polygon_vertex[3 * i + 1],
-                             (float) polygon_vertex[3 * i + 2]);
+        obj_pts.emplace_back(SQUARE_LENGTH * (float) polygon_vertex[3 * i], SQUARE_LENGTH * (float) polygon_vertex[3 * i + 1],
+                             SQUARE_LENGTH * (float) polygon_vertex[3 * i + 2]);
     }
 
     projectPoints(obj_pts, rvecs, tvecs, cameraM, distortionC, image_point);

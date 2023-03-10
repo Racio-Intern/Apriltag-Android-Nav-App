@@ -220,16 +220,14 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
-            //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
-//            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             for (detection in it) {
                 val posEstiResult =OpenCVNative.draw_and_estimate_camera_position(
                     matInput.nativeObjAddr,
                     cameraMatrixData,
                     detection.p,
-                    doubleArrayOf(-4.2, -4.2, 0.0, -4.2, 4.2, 0.0, 4.2, 4.2, 0.0, 4.2, -4.2, 0.0)
+                    coordnateArray[0]
                 )
-                // Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
+
                 posEstiResult.id = detection.id
                 posEstimateResults.add(posEstiResult)
             }
@@ -309,6 +307,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         const val FPS = 15
 
         // points(x, y, z)
+        // tag의 중심 좌표는 (0, 0, 0) 이고
+        // tag의 가로 길이를 1라고 가정
         val defaultCoords = arrayOf(
             0.5, 0.5, 0.0,
             0.5, -0.5, 0.0,
