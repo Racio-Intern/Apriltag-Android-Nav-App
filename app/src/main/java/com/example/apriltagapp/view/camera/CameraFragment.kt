@@ -22,7 +22,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
-import apriltag.ApriltagPosEstimation
+import apriltag.CameraPosEstimation
 import apriltag.OpenCVNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
@@ -54,7 +54,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var detectFinished: Boolean = true
 
 //    private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
-    private var posEstimateResults = ArrayList<ApriltagPosEstimation>()
+    private var posEstimateResults = ArrayList<CameraPosEstimation>()
     //map 관련 변수
     private var camPosX = 0
     private var camPosY = 0
@@ -223,10 +223,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
 //            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             for (detection in it) {
-                val posEstiResult =OpenCVNative.apriltag_pos_estimate(
+                val posEstiResult =OpenCVNative.draw_and_estimate_camera_position(
                     matInput.nativeObjAddr,
+                    cameraMatrixData,
                     detection.p,
-                    cameraMatrixData
+                    doubleArrayOf(-4.2, -4.2, 0.0, -4.2, 4.2, 0.0, 4.2, 4.2, 0.0, 4.2, -4.2, 0.0)
                 )
                 // Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
                 posEstiResult.id = detection.id
