@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import apriltag.ApriltagDetection
-import apriltag.ApriltagPosEstimation
+import apriltag.CameraPosEstimation
 import com.example.apriltagapp.model.*
 import com.example.apriltagapp.model.baseModel.UserCamera
 import com.example.apriltagapp.model.repository.TagFamilyRepository
@@ -118,7 +118,7 @@ class CameraViewModel : ViewModel() {
      * camera view의 onCameraFrame에 호출하는 함수입니다.
      * opencv에서 추정한 pos matrix를 전달받아 위치 추정을 하고, 그 결과를 livedata 에 반영합니다.
      */
-    fun onCameraFrame(posEstimations: ArrayList<ApriltagPosEstimation>) {
+    fun onCameraFrame(posEstimations: ArrayList<CameraPosEstimation>) {
         var avgX = 0.0
         var avgY = 0.0
         var count = 0
@@ -132,9 +132,9 @@ class CameraViewModel : ViewModel() {
             avgX += absPos.first
             avgY += absPos.second
         }
-        relativePos[0] = posEstimations[0].relativePos[0]
-        relativePos[1] = posEstimations[0].relativePos[1]
-        relativePos[2] = posEstimations[0].relativePos[2]
+        relativePos[0] = posEstimations[0].relativeCameraPos[0]
+        relativePos[1] = posEstimations[0].relativeCameraPos[1]
+        relativePos[2] = posEstimations[0].relativeCameraPos[2]
         relativePos[3] = posEstimations[0].id.toDouble()
         _estimatedPos.postValue(Pair(avgX / (posEstimations.size - count), avgY / (posEstimations.size - count)))
 
@@ -183,9 +183,9 @@ class CameraViewModel : ViewModel() {
     /**
      * opencv가 구한 카메라 추정 위치를 이용해 평면 좌표계상 위치를 추정합니다.
      */
-    private fun estimateAbsCamPos(posEstimation: ApriltagPosEstimation): Pair<Double, Double>? {
-        val x = posEstimation.relativePos[0]
-        val z = posEstimation.relativePos[2]
+    private fun estimateAbsCamPos(posEstimation: CameraPosEstimation): Pair<Double, Double>? {
+        val x = posEstimation.relativeCameraPos[0]
+        val z = posEstimation.relativeCameraPos[2]
         val detectedTag = tagGraph.value.tagFamily.tagMap[posEstimation.id]?:return null
 
         val distance = hypot(x, z)
