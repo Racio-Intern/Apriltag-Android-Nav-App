@@ -26,12 +26,12 @@ class SearchViewModel : ViewModel() {
         tagFamilyRepository.observeSpots(_spots)
     }
 
-    fun onSearchTextChanged(text: String): ArrayList<String> {
-        val result: ArrayList<String> = arrayListOf()
+    fun onSearchTextChanged(text: String): ArrayList<Pair<String, Int>> {
+        val result: ArrayList<Pair<String, Int>> = arrayListOf()
         spots.value?.let { spotNames ->
-            for(key in spotNames.keys) {
-                if(key.startsWith(text)) {
-                    result.add(key)
+            for(pair in spotNames) {
+                if(pair.key.startsWith(text)) {
+                    result.add(Pair(pair.key, pair.value))
                 }
             }
         }

@@ -55,9 +55,9 @@ class SearchFragment : Fragment(), SearchResultClickListener {
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 newText?.apply {
-                    spotNameList.clear()
-                    for(name in viewModel.onSearchTextChanged(newText)) {
-                        spotNameList.add(name)
+                    spotPairList.clear()
+                    for(pair in viewModel.onSearchTextChanged(newText)) {
+                        spotPairList.add(Pair(pair.first, pair.second))
                     }
                     binding?.viewResult?.adapter?.notifyDataSetChanged()
                 }
