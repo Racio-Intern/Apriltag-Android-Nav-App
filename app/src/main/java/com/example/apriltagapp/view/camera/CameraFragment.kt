@@ -22,7 +22,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
-import apriltag.ApriltagPosEstimation
+import apriltag.CameraPosEstimation
 import apriltag.OpenCVNative
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
@@ -54,7 +54,7 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     private var detectFinished: Boolean = true
 
 //    private var estPosMatrix = doubleArrayOf(0.0, 0.0, 0.0)
-    private var posEstimateResults = ArrayList<ApriltagPosEstimation>()
+    private var posEstimateResults = ArrayList<CameraPosEstimation>()
     //map 관련 변수
     private var camPosX = 0
     private var camPosY = 0
@@ -220,15 +220,14 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
             //matResult = Mat(matInput.cols(), matInput.rows(), matInput.type())
             //OpenCVNative.draw_polylines_on_apriltag(matInput.nativeObjAddr, detection.p, coordnateArray[viewModel.direction.ordinal])
             //OpenCVNative.put_text(matInput.nativeObjAddr, matResult.nativeObjAddr, intArrayOf(matInput.rows()/4, matInput.cols() * 3 / 4))
-            //estPosMatrix = OpenCVNative.calibrateCamera(matInput.nativeObjAddr, detection.p, intArrayOf(mSize.width, mSize.height))
-//            estPosMatrix = OpenCVNative.apriltag_detect_and_pos_estimate(matInput.nativeObjAddr, detection.p, cameraMatrixData) // rx, ry, rz, tx, ty, tz
             for (detection in it) {
-                val posEstiResult =OpenCVNative.apriltag_pos_estimate(
+                val posEstiResult =OpenCVNative.draw_and_estimate_camera_position(
                     matInput.nativeObjAddr,
+                    cameraMatrixData,
                     detection.p,
-                    cameraMatrixData
+                    coordnateArray[0]
                 )
-                // Log.d("rare", "${posEstiResult.relativePos.toList().toString()}")
+
                 posEstiResult.id = detection.id
                 posEstimateResults.add(posEstiResult)
             }
@@ -308,6 +307,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         const val FPS = 15
 
         // points(x, y, z)
+        // tag의 중심 좌표는 (0, 0, 0) 이고
+        // tag의 가로 길이를 1라고 가정
         val defaultCoords = arrayOf(
             0.5, 0.5, 0.0,
             0.5, -0.5, 0.0,
