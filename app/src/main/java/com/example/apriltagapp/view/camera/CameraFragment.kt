@@ -24,6 +24,8 @@ import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
 import apriltag.CameraPosEstimation
 import apriltag.OpenCVNative
+import com.example.apriltagapp.AppComponent
+import com.example.apriltagapp.NavApplication
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
 import com.example.apriltagapp.listener.TagDetectionListener
@@ -40,6 +42,9 @@ import kotlin.time.ExperimentalTime
 
 class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCallback,
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
+
+    lateinit var appComponent: AppComponent
+
     private val viewModel: CameraViewModel by viewModels()
     var binding: FragmentCameraBinding? = null
     private val args: CameraFragmentArgs by navArgs()
@@ -101,6 +106,11 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        //dagger
+        appComponent = (activity?.application as NavApplication).appComponent
+
+        val repository = appComponent.getRepository()
+
         binding = FragmentCameraBinding.inflate(inflater)
 
 

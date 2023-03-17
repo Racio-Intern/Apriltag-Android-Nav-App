@@ -2,6 +2,8 @@ package com.example.apriltagapp
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.apriltagapp.model.Stadium
+import com.example.apriltagapp.model.repository.StadiumRepository
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,10 +17,16 @@ import org.junit.Assert.*
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
+    val repository = StadiumRepository()
+
     @Test
-    fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.example.apriltagapp", appContext.packageName)
+    fun initStadium() {
+        val nodes = repository.nodes
+        assertEquals(nodes, 1)
+    }
+
+    @Test
+    fun 다익스트라_테스트() {
+
     }
 }
