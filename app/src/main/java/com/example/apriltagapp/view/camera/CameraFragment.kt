@@ -19,12 +19,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import apriltag.ApriltagDetection
 import apriltag.CameraPosEstimation
 import apriltag.OpenCVNative
-import com.example.apriltagapp.AppComponent
+import com.example.apriltagapp.di.AppComponent
 import com.example.apriltagapp.NavApplication
 import com.example.apriltagapp.R
 import com.example.apriltagapp.databinding.FragmentCameraBinding
@@ -44,8 +46,8 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
     CameraBridgeViewBase.CvCameraViewListener2, TagDetectionListener {
 
     lateinit var appComponent: AppComponent
+    lateinit var viewModel: CameraViewModel
 
-    private val viewModel: CameraViewModel by viewModels()
     var binding: FragmentCameraBinding? = null
     private val args: CameraFragmentArgs by navArgs()
     private var aprilDetections: ArrayList<ApriltagDetection>? = null
@@ -109,7 +111,10 @@ class CameraFragment : Fragment(), ActivityCompat.OnRequestPermissionsResultCall
         //dagger
         appComponent = (activity?.application as NavApplication).appComponent
 
-        val repository = appComponent.getRepository()
+        val viewModelFactory = appComponent.getViewModelFactory()
+
+        viewModel = ViewModelProvider(this, viewModelFactory).get(CameraViewModel::class.java)
+//        of(this, viewModelFactory).get(MainViewModel::class.java)
 
         binding = FragmentCameraBinding.inflate(inflater)
 
