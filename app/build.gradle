@@ -63,20 +63,20 @@ dependencies {
 
     implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
     implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
-//    implementation 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.3'
+    // implementation 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.3'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    //dagger2 implementation
+    // dagger2 implementation
     def dagger_version = '2.45'
     implementation "com.google.dagger:dagger:$dagger_version"
     kapt "com.google.dagger:dagger-compiler:$dagger_version"
 
     implementation "com.google.dagger:dagger-android:$dagger_version"
     implementation "com.google.dagger:dagger-android-support:$dagger_version"
-// if you use the support libraries
+    // if you use the support libraries
     kapt "com.google.dagger:dagger-android-processor:$dagger_version"
 
 

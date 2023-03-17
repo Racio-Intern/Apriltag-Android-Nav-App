@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 project("apriltagapp")
 
-set(pathPROJECT /Users/hhtboy/Documents/GitHub/Apriltag-Android-Nav-App) # 수정필요
+set(pathPROJECT ../../../../) # 수정필요
 set(pathOPENCV ${pathPROJECT}/sdk)
 set(pathLIBOPENCV_JAVA ${pathOPENCV}/native/libs/${ANDROID_ABI}/libopencv_java4.so)
 
